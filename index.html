@@ -180,6 +180,9 @@
       </div>
     </div>
 
+    <!-- AJOUT ICI : Zone d'affichage du résultat du calcul -->
+      <div id="calc-result-display" style="margin-top: 10px; font-weight: bold; color: #8e44ad; text-align: center; font-size: 1.1rem;"></div>
+    </div>
     <!-- Saisie Activité -->
     <div class="card">
       <h3>🏃 Rechercher ou ajouter une activité</h3>
@@ -624,7 +627,7 @@
     if (item) document.getElementById('sport-duration').value = item.refDur;
   }
 
-  function calculateWWPoints() {
+function calculateWWPoints() {
     const name = document.getElementById('calc-name').value || "Aliment calculé (100g)";
     const cal = parseFloat(document.getElementById('calc-cal').value) || 0;
     const sat = parseFloat(document.getElementById('calc-sat').value) || 0;
@@ -632,11 +635,17 @@
     const pro = parseFloat(document.getElementById('calc-pro').value) || 0;
 
     let pts = Math.max(0, Math.round((cal / 33) + (sat * 0.36) + (sug / 4) - (pro / 11)));
+    
+    // Remplit la section de recherche en haut
     document.getElementById('food-search').value = name;
     currentRefPts = pts;
     document.getElementById('food-qty').value = 1;
     document.getElementById('food-pts').value = pts;
     document.getElementById('food-portion-info').innerText = `Résultat formule : ${pts} SP pour 100g`;
+
+    // Affiche le résultat directement sous les boutons du calculateur
+    document.getElementById('calc-result-display').innerText = `Résultat : ${pts} SmartPoint(s) pour 100g`;
+
     return pts;
   }
 
