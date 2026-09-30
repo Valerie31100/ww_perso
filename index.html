@@ -229,6 +229,17 @@
 
   <!-- ONGLET 1 : AUJOURD'HUI -->
   <div id="tab-today" class="tab-content active">
+    <!-- Choix de la journée sur laquelle on saisit -->
+    <div class="card" id="date-card">
+      <h3>📅 Journée en cours de saisie</h3>
+      <input type="date" id="active-date" onchange="onActiveDateChange()">
+      <div style="display:flex; gap:8px;">
+        <button type="button" onclick="shiftActiveDay(-1)" style="background:#7f8c8d;">◀ Jour précédent</button>
+        <button type="button" onclick="setActiveDate(getTodayKey())" style="background:#7f8c8d;">Aujourd'hui</button>
+      </div>
+      <div id="active-date-info" class="sub-text" style="margin-top:4px;"></div>
+    </div>
+
     <div class="card flex-between">
       <div class="stat-box">
         <div class="stat-val" id="disp-daily-left">23</div>
@@ -303,7 +314,7 @@
 
     <!-- Journal du jour -->
     <div class="card">
-      <h3>📋 Journal d'aujourd'hui</h3>
+      <h3 id="journal-title">📋 Journal d'aujourd'hui</h3>
       <div id="today-log-list"></div>
     </div>
 
@@ -1165,12 +1176,50 @@
 
   function getTodayKey() { return dateToKey(new Date()); }
 
-  // Clé (AAAA-MM-JJ) du lundi de la semaine en cours
-  function getWeekStartKey() {
-    const now = new Date();
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  function isDateKey(key) { return /^\d{4}-\d{2}-\d{2}$/.test(key || ''); }
+
+  function keyToDate(key) {
+    const [y, m, d] = key.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function formatDateFr(key) {
+    return keyToDate(key).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  // Clé (AAAA-MM-JJ) du lundi de la semaine contenant la date donnée (par défaut : aujourd'hui)
+  function getWeekStartKey(key) {
+    const d = keyToDate(key || getTodayKey());
     d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // lundi = 0, dimanche = 6
     return dateToKey(d);
+  }
+
+  // ---------- Journée sur laquelle on saisit ----------
+  // null = aujourd'hui (suit automatiquement le changement de date) ; sinon une journée passée choisie
+  let activeDate = null;
+
+  function getActiveKey() { return activeDate || getTodayKey(); }
+
+  function setActiveDate(key) {
+    const today = getTodayKey();
+    if (!isDateKey(key) || key > today) key = today; // pas de saisie dans le futur
+    activeDate = key === today ? null : key;
+    updateUI();
+  }
+
+  function onActiveDateChange() { setActiveDate(document.getElementById('active-date').value); }
+
+  function shiftActiveDay(delta) {
+    const d = keyToDate(getActiveKey());
+    d.setDate(d.getDate() + delta);
+    setActiveDate(dateToKey(d));
+  }
+
+  // Depuis l'historique : ouvre la journée choisie dans l'onglet de saisie
+  function editDay(key) {
+    setActiveDate(key);
+    switchTab('today', document.querySelectorAll('.nav-btn')[0]);
+    window.scrollTo(0, 0);
   }
 
   function loadData() {
@@ -1185,9 +1234,9 @@
   function saveData(data) { localStorage.setItem('ww_data', JSON.stringify(data)); updateUI(); }
 
   function addEntry(type) {
-    const today = getTodayKey();
+    const dayKey = getActiveKey();
     const data = loadData();
-    if (!data[today]) data[today] = { entries: [], sportPts: 0 };
+    if (!data[dayKey]) data[dayKey] = { entries: [], sportPts: 0 };
 
     if (type === 'food') {
       let name = document.getElementById('food-search').value || 'Aliment';
@@ -1195,7 +1244,7 @@
       const pts = parseFloat(document.getElementById('food-pts').value) || 0;
       if (qty !== 1) name += ` (x${qty})`;
 
-      data[today].entries.push({ id: Date.now(), type: 'food', name, pts, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
+      data[dayKey].entries.push({ id: Date.now(), type: 'food', name, pts, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
       document.getElementById('food-search').value = '';
       document.getElementById('food-qty').value = 1;
       document.getElementById('food-pts').value = '';
@@ -1207,8 +1256,8 @@
       const matchedSport = SPORT_DATABASE.find(s => s.name.toLowerCase() === name.trim().toLowerCase());
       let pts = matchedSport ? round1((duration / matchedSport.refDur) * matchedSport.pts) : round1((duration / 15) * 1.5);
 
-      data[today].entries.push({ id: Date.now(), type: 'sport', name, duration, pts, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
-      data[today].sportPts = round1((data[today].sportPts || 0) + pts);
+      data[dayKey].entries.push({ id: Date.now(), type: 'sport', name, duration, pts, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
+      data[dayKey].sportPts = round1((data[dayKey].sportPts || 0) + pts);
       document.getElementById('sport-search').value = '';
       document.getElementById('sport-duration').value = '';
     }
@@ -1230,22 +1279,40 @@
   }
 
   function updateUI() {
-    const today = getTodayKey();
+    const todayKey = getTodayKey();
+    const activeKey = getActiveKey();
+    const isToday = activeKey === todayKey;
     const data = loadData();
-    const dayData = data[today] || { entries: [], sportPts: 0 };
+    const dayData = data[activeKey] || { entries: [], sportPts: 0 };
     const daySport = dayData.sportPts || 0;
+
+    // Sélecteur de journée
+    const dateInput = document.getElementById('active-date');
+    dateInput.value = activeKey;
+    dateInput.max = todayKey;
+    const info = document.getElementById('active-date-info');
+    if (isToday) {
+      info.innerText = `Saisie sur aujourd'hui (${formatDateFr(activeKey)})`;
+      info.style.color = '';
+      info.style.fontWeight = '';
+    } else {
+      info.innerText = `⚠️ Tu modifies la journée du ${formatDateFr(activeKey)} (et non aujourd'hui)`;
+      info.style.color = '#e67e22';
+      info.style.fontWeight = 'bold';
+    }
+    document.getElementById('journal-title').innerText = isToday ? "📋 Journal d'aujourd'hui" : `📋 Journal du ${formatDateFr(activeKey)}`;
 
     let foodPtsUsed = 0;
     dayData.entries.filter(e => e.type === 'food').forEach(e => foodPtsUsed += e.pts);
 
     let dailyLeft = Math.max(0, DAILY_BUDGET - foodPtsUsed);
 
-    // Réserve hebdo : 28 points remis à zéro chaque lundi. Sur la semaine en cours (lundi -> aujourd'hui) :
-    // + points sport de chaque jour, - dépassements du budget journalier de chaque jour.
-    const weekStart = getWeekStartKey();
+    // Réserve hebdo : 28 points remis à zéro chaque lundi. Sur la semaine de la journée affichée
+    // (lundi -> cette journée) : + points sport de chaque jour, - dépassements du budget journalier de chaque jour.
+    const weekStart = getWeekStartKey(activeKey);
     let weeklyLeft = WEEKLY_BUDGET;
     Object.keys(data).forEach(key => {
-      if (key < weekStart || key > today) return;
+      if (key < weekStart || key > activeKey) return;
       const d = data[key];
       if (!d || !Array.isArray(d.entries)) return;
       let food = 0;
@@ -1259,7 +1326,7 @@
 
     const logList = document.getElementById('today-log-list');
     if (dayData.entries.length === 0) {
-      logList.innerHTML = '<p style="color:#aaa;">Rien de saisi aujourd\'hui</p>';
+      logList.innerHTML = `<p style="color:#aaa;">${isToday ? "Rien de saisi aujourd'hui" : "Rien de saisi ce jour-là"}</p>`;
     } else {
       logList.innerHTML = dayData.entries.map(e => `
         <div class="log-item">
@@ -1270,7 +1337,7 @@
             <span class="badge ${e.type === 'food' ? 'badge-food' : 'badge-sport'}">
               ${e.type === 'food' ? '-' + e.pts + ' SP' : '+' + e.pts + ' Pts Sport'}
             </span>
-            <button class="btn-del" onclick="deleteEntry('${today}', ${Number(e.id)})">🗑️</button>
+            <button class="btn-del" onclick="deleteEntry('${activeKey}', ${Number(e.id)})">🗑️</button>
           </div>
         </div>`).join('');
     }
@@ -1284,14 +1351,19 @@
           • ${escapeHtml(e.name)} (${e.type === 'food' ? e.pts + ' SP' : '+' + e.pts + ' Pts Sport'})
         </div>
       `).join('');
+      const valid = isDateKey(date);
+      const editBtn = valid
+        ? `<button type="button" onclick="editDay('${date}')" style="background:#8e44ad; padding:8px; font-size:0.85rem; margin-top:8px;">✏️ Compléter / modifier cette journée</button>`
+        : '';
 
       return `
         <div class="history-card">
           <div class="flex-between">
-            <strong>📅 ${escapeHtml(date)}</strong>
+            <strong>📅 ${escapeHtml(valid ? formatDateFr(date) : date)}</strong>
             <small>${round1(dayTotalFood)} SP | +${round1(data[date].sportPts)} Pts Sport</small>
           </div>
           ${detailsHtml}
+          ${editBtn}
         </div>`;
     }).join('');
   }
@@ -1583,6 +1655,9 @@
 
   btnScan.addEventListener('click', startScanner);
   btnCloseScanner.addEventListener('click', stopScanner);
+
+  // Au retour dans l'appli (ex. laissée ouverte pendant la nuit), on rafraîchit les compteurs du jour
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) updateUI(); });
 
   initDatalists();
   updateUI();
