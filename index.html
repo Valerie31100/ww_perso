@@ -1375,15 +1375,11 @@
     if (btn) btn.classList.add('active');
   }
 
-  // Activation du Service Worker pour le mode Hors-ligne / Zone Blanche
-  if ('serviceWorker' in navigator) {
-    const swCode = `
-      self.addEventListener('install', e => e.waitUntil(caches.open('ww-pwa-v1').then(c => c.addAll(['./']))));
-      self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));
-    `;
-    const blob = new Blob([swCode], { type: 'text/javascript' });
-    const swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl).catch(err => console.log('SW Offline non requis si local', err));
+  // Mode hors-ligne : le Service Worker est dans le fichier sw.js, à placer dans le même dossier que cette page
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(err => console.log('Mode hors-ligne non activé :', err));
+    });
   }
 
   // ---------- Scanner de code-barres ----------
@@ -1664,4 +1660,3 @@
 </script>
 </body>
 </html>
-
