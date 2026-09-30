@@ -175,6 +175,54 @@
       margin-top: 16px;
       background: #dc3545;
     }
+
+    #scanner-view {
+      position: relative;
+      line-height: 0;
+    }
+
+    /* Cadre de visée : le code-barres doit être dans cette zone (c'est la zone réellement analysée) */
+    .scan-frame {
+      position: absolute;
+      left: 4%;
+      right: 4%;
+      top: 27.5%;
+      height: 45%;
+      border: 2px solid rgba(255,255,255,0.85);
+      border-radius: 10px;
+      pointer-events: none;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.25);
+    }
+
+    .scan-line {
+      position: absolute;
+      left: 6%;
+      right: 6%;
+      top: 50%;
+      height: 2px;
+      background: #ff2d2d;
+      box-shadow: 0 0 8px #ff2d2d;
+      pointer-events: none;
+      animation: scan-pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes scan-pulse {
+      0%, 100% { opacity: 0.35; }
+      50% { opacity: 1; }
+    }
+
+    #scanner-hint {
+      color: #ddd;
+      font-size: 0.85rem;
+      margin: 10px 0 0 0;
+    }
+
+    #scanner-status {
+      color: #8fd19e;
+      font-size: 0.75rem;
+      margin: 6px 0 0 0;
+      min-height: 1em;
+    }
   </style>
 </head>
 <body>
@@ -288,7 +336,13 @@
   <div id="scanner-container">
     <div id="scanner-box">
       <h3 style="color: white; margin-bottom: 15px;">Placez le code-barres dans le cadre</h3>
-      <video id="scanner-video" playsinline muted></video>
+      <div id="scanner-view">
+        <video id="scanner-video" playsinline muted></video>
+        <div class="scan-frame"></div>
+        <div class="scan-line"></div>
+      </div>
+      <p id="scanner-hint">Place le code-barres à plat dans le cadre, bien net (15 à 20 cm), avec assez de lumière.</p>
+      <p id="scanner-status"></p>
       <button id="btn-close-scanner" type="button" class="scanner-close">❌ Annuler</button>
     </div>
   </div>
@@ -1270,12 +1324,18 @@
   // Safari / iPhone n'a pas BarcodeDetector : on charge alors ZXing (une seule fois, depuis internet)
   const ZXING_URL = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
 
+  const scannerStatus = document.getElementById('scanner-status');
+
   let mediaStream = null;
   let detectionInterval = null;
   let detectBusy = false;
+  let scanTick = 0;
+  let scanEngine = '';
 
   const scanCanvas = document.createElement('canvas');
   const scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
+
+  function setScannerStatus(text) { scannerStatus.innerText = text; }
 
   function loadZXing() {
     if (window.ZXing) return Promise.resolve();
@@ -1288,13 +1348,46 @@
     });
   }
 
-  // Renvoie une fonction asynchrone qui lit une image de la vidéo et renvoie le code (ou null)
+  // Partie de l'image vidéo réellement visible à l'écran (object-fit: cover),
+  // puis, sauf si "full", la bande centrale correspondant au cadre de visée (45 % de la hauteur).
+  function getScanRegion(vw, vh, cw, ch, full) {
+    let sw = vw, sh = vh, sx = 0, sy = 0;
+    if (cw > 0 && ch > 0) {
+      const scale = Math.max(cw / vw, ch / vh);
+      sw = Math.min(vw, cw / scale);
+      sh = Math.min(vh, ch / scale);
+      sx = (vw - sw) / 2;
+      sy = (vh - sh) / 2;
+    }
+    if (!full) {
+      const bandH = sh * 0.45;
+      sy += (sh - bandH) / 2;
+      sh = bandH;
+    }
+    return { sx, sy, sw, sh };
+  }
+
+  // Copie la zone à analyser dans scanCanvas, en pleine résolution (max 1920 px de large)
+  function grabFrame(full) {
+    const vw = video.videoWidth, vh = video.videoHeight;
+    if (!vw || !vh) return false;
+    const r = getScanRegion(vw, vh, video.clientWidth, video.clientHeight, full);
+    const k = Math.min(1, 1920 / r.sw);
+    scanCanvas.width = Math.max(1, Math.round(r.sw * k));
+    scanCanvas.height = Math.max(1, Math.round(r.sh * k));
+    scanCtx.drawImage(video, r.sx, r.sy, r.sw, r.sh, 0, 0, scanCanvas.width, scanCanvas.height);
+    return true;
+  }
+
+  // Renvoie une fonction asynchrone qui analyse une image de la vidéo et renvoie le code (ou null)
   async function createDetector() {
     if ('BarcodeDetector' in window) {
       try {
         const native = new BarcodeDetector({ formats: BARCODE_FORMATS });
-        return async () => {
-          const found = await native.detect(video);
+        scanEngine = 'natif';
+        return async (full) => {
+          if (!grabFrame(full)) return null;
+          const found = await native.detect(scanCanvas);
           return found.length > 0 ? found[0].rawValue : null;
         };
       } catch (e) {
@@ -1302,7 +1395,9 @@
       }
     }
 
+    setScannerStatus('Chargement du lecteur…');
     await loadZXing();
+    scanEngine = 'ZXing';
     const hints = new Map();
     hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
       ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8,
@@ -1312,13 +1407,8 @@
     const reader = new ZXing.MultiFormatReader();
     reader.setHints(hints);
 
-    return async () => {
-      const vw = video.videoWidth, vh = video.videoHeight;
-      if (!vw || !vh) return null;
-      const scale = Math.min(1, 1280 / vw);
-      scanCanvas.width = Math.round(vw * scale);
-      scanCanvas.height = Math.round(vh * scale);
-      scanCtx.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
+    return async (full) => {
+      if (!grabFrame(full)) return null;
       try {
         const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(new ZXing.HTMLCanvasElementLuminanceSource(scanCanvas)));
         return reader.decode(bitmap).getText();
@@ -1329,15 +1419,17 @@
   }
 
   async function getCameraStream() {
+    // Haute résolution indispensable : sans cela iOS fournit du 640x480, trop flou pour lire un code-barres
+    const size = { width: { ideal: 1920 }, height: { ideal: 1080 } };
     try {
       return await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { exact: "environment" } },
+        video: { facingMode: { exact: "environment" }, ...size },
         audio: false
       });
     } catch (err) {
       // Pas de caméra arrière : on retente avec n'importe quelle caméra
       if (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError') {
-        return await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        return await navigator.mediaDevices.getUserMedia({ video: { ...size }, audio: false });
       }
       throw err;
     }
@@ -1352,10 +1444,21 @@
     }
 
     try {
+      scanTick = 0;
+      setScannerStatus('');
       mediaStream = await getCameraStream();
       video.srcObject = mediaStream;
       scannerContainer.classList.add('visible');
       await video.play();
+
+      // Mise au point automatique continue, si l'appareil le permet
+      try {
+        const track = mediaStream.getVideoTracks()[0];
+        const caps = track.getCapabilities ? track.getCapabilities() : {};
+        if (caps.focusMode && caps.focusMode.includes('continuous')) {
+          await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+        }
+      } catch (e) { /* non supporté : sans conséquence */ }
 
       const detect = await createDetector();
       if (!mediaStream) return; // scan annulé pendant le chargement
@@ -1364,17 +1467,22 @@
         if (detectBusy || !detectionInterval) return;
         detectBusy = true;
         try {
-          const code = await detect();
+          scanTick++;
+          // 2 analyses sur 3 dans le cadre de visée, 1 sur 3 sur toute l'image visible
+          const code = await detect(scanTick % 3 === 0);
           if (code && detectionInterval) {
             stopScanner();
             onBarcodeDetected(code);
+            return;
           }
+          setScannerStatus(`Lecteur ${scanEngine} · flux ${video.videoWidth}×${video.videoHeight} · analyses : ${scanTick}`);
         } catch (err) {
           console.error("Erreur lors de la détection :", err);
+          setScannerStatus('Erreur de lecture : ' + (err && err.message ? err.message : err));
         } finally {
           detectBusy = false;
         }
-      }, 300);
+      }, 250);
 
     } catch (err) {
       console.error("Erreur d'accès à la caméra ou au lecteur :", err);
@@ -1481,3 +1589,4 @@
 </script>
 </body>
 </html>
+
