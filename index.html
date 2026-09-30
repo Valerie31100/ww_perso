@@ -21,6 +21,9 @@
       --accent: #27ae60;
       --warn: #e74c3c;
     }
+
+    * { box-sizing: border-box; }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: var(--bg);
@@ -31,7 +34,9 @@
       padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
       -webkit-tap-highlight-color: transparent;
     }
+
     h1, h2, h3 { margin: 0 0 10px 0; }
+
     .card {
       background: var(--card);
       border-radius: 12px;
@@ -39,10 +44,12 @@
       margin-bottom: 15px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
+
     .flex-between { display: flex; justify-content: space-between; align-items: center; }
     .stat-box { text-align: center; flex: 1; }
     .stat-val { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
     .stat-lbl { font-size: 0.8rem; color: #7f8c8d; }
+
     input, select, button, textarea {
       width: 100%;
       padding: 12px;
@@ -52,6 +59,7 @@
       box-sizing: border-box;
       font-size: 1rem;
     }
+
     button {
       background: var(--primary);
       color: white;
@@ -60,21 +68,26 @@
       cursor: pointer;
       border-radius: 8px;
     }
+
     .log-item {
       padding: 10px 0;
       border-bottom: 1px solid #eee;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 8px;
     }
+
     .badge {
       padding: 4px 8px;
       border-radius: 6px;
       font-size: 0.85rem;
       font-weight: bold;
     }
+
     .badge-food { background: #ebf5fb; color: var(--primary); }
     .badge-sport { background: #eafaf1; color: var(--accent); }
+
     .btn-del {
       background: none;
       border: none;
@@ -84,6 +97,7 @@
       width: auto;
       padding: 0 0 0 10px;
     }
+
     .nav-bar {
       position: fixed;
       bottom: 0;
@@ -94,6 +108,7 @@
       border-top: 1px solid #ddd;
       padding-bottom: env(safe-area-inset-bottom);
     }
+
     .nav-btn {
       flex: 1;
       padding: 12px;
@@ -102,17 +117,63 @@
       color: #7f8c8d;
       border-radius: 0;
       font-size: 0.9rem;
+      border: none;
+      font-weight: bold;
     }
+
     .nav-btn.active { color: var(--primary); font-weight: bold; }
+
     .tab-content { display: none; }
     .tab-content.active { display: block; }
+
     .sub-text { font-size: 0.85rem; color: #7f8c8d; }
+
     .history-card {
       background: #f8f9fa;
       border: 1px solid #e9ecef;
       border-radius: 8px;
       padding: 10px;
       margin-bottom: 10px;
+    }
+
+    .scan-btn {
+      background: #0d6efd;
+      margin-top: 8px;
+    }
+
+    #scanner-container {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    #scanner-container.visible {
+      display: flex;
+    }
+
+    #scanner-box {
+      position: relative;
+      width: min(90vw, 500px);
+      text-align: center;
+    }
+
+    #scanner-video {
+      width: 100%;
+      max-height: 60vh;
+      border: 2px solid #007bff;
+      border-radius: 8px;
+      object-fit: cover;
+      background: black;
+    }
+
+    .scanner-close {
+      margin-top: 16px;
+      background: #dc3545;
     }
   </style>
 </head>
@@ -141,7 +202,7 @@
       <input type="text" id="food-search" list="food-db" placeholder="Taper le nom de l'aliment..." onchange="onFoodSelect()">
       <datalist id="food-db"></datalist>
       <div id="food-portion-info" class="sub-text"></div>
-      
+
       <div style="display:flex; gap:8px;">
         <div style="flex:1;">
           <label style="font-size:0.8rem; color:#666;">Quantité :</label>
@@ -152,30 +213,20 @@
           <input type="number" id="food-pts" placeholder="Points (ex: 3)">
         </div>
       </div>
-      
+
       <button onclick="addEntry('food')">Ajouter au journal</button>
+
+      <!-- SCAN CODE BARRE -->
+      <button id="btn-scan" class="scan-btn" type="button">📷 Scanner un code-barres</button>
     </div>
 
-     <!-- SCAN CODE BARRE / Formule WW -->
- 
-<!-- Bouton pour ouvrir le scanner -->
-<button id="btn-scan" type="button" class="btn">
-  📷 Scanner un code-barres
-</button>
-
-</div>
-
-
-   
     <!-- Calculateur Macro / Formule WW -->
-    <div class="card">
+    <div class="card" id="calc-card">
       <h3>📊 Calculateur & Sauvegarde d'aliment</h3>
       <input type="text" id="calc-name" placeholder="Nom de ton aliment (ex: Gâteau maison)">
-      
+
       <label style="font-size:0.8rem; color:#666;">Catégorie de l'aliment :</label>
-      <select id="calc-cat">
-        <!-- Rempli dynamiquement -->
-      </select>
+      <select id="calc-cat"></select>
 
       <div style="display:flex; gap:8px;">
         <input type="number" id="calc-cal" placeholder="Calories (100g)">
@@ -191,9 +242,8 @@
       </div>
     </div>
 
-    <!-- AJOUT ICI : Zone d'affichage du résultat du calcul -->
-      <div id="calc-result-display" style="margin-top: 10px; font-weight: bold; color: #8e44ad; text-align: center; font-size: 1.1rem;"></div>
-    </div>
+    <div id="calc-result-display" style="margin-top: 10px; font-weight: bold; color: #8e44ad; text-align: center; font-size: 1.1rem;"></div>
+
     <!-- Saisie Activité -->
     <div class="card">
       <h3>🏃 Rechercher ou ajouter une activité</h3>
@@ -230,11 +280,19 @@
 
   <!-- BARRE DE NAVIGATION -->
   <div class="nav-bar">
-    <button class="nav-btn active" onclick="switchTab('today')">Aujourd'hui</button>
-    <button class="nav-btn" onclick="switchTab('history')">Historique</button>
+    <button class="nav-btn active" onclick="switchTab('today', this)">Aujourd'hui</button>
+    <button class="nav-btn" onclick="switchTab('history', this)">Historique</button>
   </div>
- <!-- MODAL SCANNER --> <div id="scanner-container"> <div id="scanner-box"> <h3 style="color: white; margin-bottom: 15px;">Placez le code-barres dans le cadre</h3> <video id="scanner-video" playsinline></video> <button id="btn-close-scanner" type="button" class="scanner-close">❌ Annuler</button> </div> </div>
-  
+
+  <!-- MODAL SCANNER -->
+  <div id="scanner-container">
+    <div id="scanner-box">
+      <h3 style="color: white; margin-bottom: 15px;">Placez le code-barres dans le cadre</h3>
+      <video id="scanner-video" playsinline muted></video>
+      <button id="btn-close-scanner" type="button" class="scanner-close">❌ Annuler</button>
+    </div>
+  </div>
+
 <script>
   const DAILY_BUDGET = 23;
   const WEEKLY_BUDGET = 28;
@@ -876,56 +934,84 @@
     { "name": "Yoga", "intensity": "Faible", "refDur": 15, "pts": 1 }
     ];
 
- function getCustomFoods() {
+  // ---------- Utilitaires ----------
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function round1(n) { return Math.round((Number(n) || 0) * 10) / 10; }
+
+  function getCustomFoods() {
     try {
-      return JSON.parse(localStorage.getItem('ww_custom_foods') || '[]');
+      const parsed = JSON.parse(localStorage.getItem('ww_custom_foods') || '[]');
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
     }
+  }
+
+  // Liste complète (base + perso). Quand un même nom existe avec plusieurs portions
+  // (ex : McNuggets x4 / x6 / x9), la portion est ajoutée au libellé pour pouvoir
+  // sélectionner chaque variante dans la liste.
+  function buildFoodIndex() {
+    const list = [
+      ...FOOD_DATABASE.map(f => ({ ...f, custom: false })),
+      ...getCustomFoods().map(f => ({ ...f, custom: true }))
+    ];
+    const counts = {};
+    list.forEach(f => {
+      const k = String(f.name).toLowerCase();
+      counts[k] = (counts[k] || 0) + 1;
+    });
+    list.forEach(f => {
+      f.label = counts[String(f.name).toLowerCase()] > 1 ? `${f.name} — ${f.portion}` : f.name;
+    });
+    return list;
   }
 
   function populateCategoryDropdown() {
     const catSelect = document.getElementById('calc-cat');
     if (!catSelect) return;
 
-    const categories = Array.from(new Set(FOOD_DATABASE.map(f => f.cat))).sort();
-    catSelect.innerHTML = '<option value="Mes Créations">⭐ Mes Créations</option>';
-    categories.forEach(cat => {
-      catSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
-    });
+    const previous = catSelect.value;
+    const categories = Array.from(new Set(FOOD_DATABASE.map(f => f.cat))).sort((a, b) => a.localeCompare(b, 'fr'));
+    catSelect.innerHTML =
+      '<option value="Mes Créations">⭐ Mes Créations</option>' +
+      categories.map(cat => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('');
+    if (previous) catSelect.value = previous;
   }
 
-function initDatalists() {
+  function initDatalists() {
     const foodList = document.getElementById('food-db');
     const sportList = document.getElementById('sport-db');
 
     if (foodList) {
-      foodList.innerHTML = '';
-      FOOD_DATABASE.forEach(item => {
-        foodList.innerHTML += `<option value="${item.name}">${item.cat} - ${item.portion} (${item.pts} SP)</option>`;
-      });
-      getCustomFoods().forEach(item => {
-        foodList.innerHTML += `<option value="${item.name}">⭐ ${item.cat} - ${item.portion} (${item.pts} SP)</option>`;
-      });
+      foodList.innerHTML = buildFoodIndex().map(item =>
+        `<option value="${escapeHtml(item.label)}">${item.custom ? '⭐ ' : ''}${escapeHtml(item.cat)} - ${escapeHtml(item.portion)} (${escapeHtml(item.pts)} SP)</option>`
+      ).join('');
     }
 
     if (sportList) {
-      sportList.innerHTML = '';
-      SPORT_DATABASE.forEach(item => {
-        sportList.innerHTML += `<option value="${item.name}">${item.intensity} - ${item.refDur} min (${item.pts} Pts)</option>`;
-      });
+      sportList.innerHTML = SPORT_DATABASE.map(item =>
+        `<option value="${escapeHtml(item.name)}">${escapeHtml(item.intensity)} - ${item.refDur} min (${item.pts} Pts)</option>`
+      ).join('');
     }
 
     populateCategoryDropdown();
   }
 
-
   function onFoodSelect() {
-    const val = document.getElementById('food-search').value;
-    const allFoods = [...FOOD_DATABASE, ...getCustomFoods()];
-    const item = allFoods.find(f => f.name.toLowerCase() === val.toLowerCase());
+    const val = document.getElementById('food-search').value.trim().toLowerCase();
+    // On parcourt à l'envers : un aliment perso prime sur un aliment de la base de même nom
+    const list = buildFoodIndex().reverse();
+    const item = list.find(f => f.label.toLowerCase() === val) || list.find(f => String(f.name).toLowerCase() === val);
     if (item) {
-      currentRefPts = item.pts;
+      currentRefPts = Number(item.pts) || 0;
       document.getElementById('food-qty').value = 1;
       document.getElementById('food-portion-info').innerText = `Portion réf : ${item.portion} (${item.pts} SP)`;
       updateCalculatedFoodPts();
@@ -934,16 +1020,16 @@ function initDatalists() {
 
   function updateCalculatedFoodPts() {
     const qty = parseFloat(document.getElementById('food-qty').value) || 1;
-    document.getElementById('food-pts').value = Math.round(currentRefPts * qty * 10) / 10;
+    document.getElementById('food-pts').value = round1(currentRefPts * qty);
   }
 
   function onSportSelect() {
-    const val = document.getElementById('sport-search').value;
+    const val = document.getElementById('sport-search').value.trim();
     const item = SPORT_DATABASE.find(s => s.name.toLowerCase() === val.toLowerCase());
     if (item) document.getElementById('sport-duration').value = item.refDur;
   }
 
-function calculateWWPoints() {
+  function calculateWWPoints() {
     const name = document.getElementById('calc-name').value || "Aliment calculé (100g)";
     const cal = parseFloat(document.getElementById('calc-cal').value) || 0;
     const sat = parseFloat(document.getElementById('calc-sat').value) || 0;
@@ -951,7 +1037,7 @@ function calculateWWPoints() {
     const pro = parseFloat(document.getElementById('calc-pro').value) || 0;
 
     let pts = Math.max(0, Math.round((cal / 33) + (sat * 0.36) + (sug / 4) - (pro / 11)));
-    
+
     // Remplit la section de recherche en haut
     document.getElementById('food-search').value = name;
     currentRefPts = pts;
@@ -972,7 +1058,7 @@ function calculateWWPoints() {
 
     const pts = calculateWWPoints();
     const customFoods = getCustomFoods();
-    const existingIndex = customFoods.findIndex(f => f.name.toLowerCase() === name.toLowerCase());
+    const existingIndex = customFoods.findIndex(f => String(f.name).toLowerCase() === name.toLowerCase());
     const foodObj = { cat: selectedCat, name: name, portion: "100g", pts: pts };
 
     if (existingIndex !== -1) customFoods[existingIndex] = foodObj;
@@ -992,9 +1078,9 @@ function calculateWWPoints() {
       const customFoods = getCustomFoods();
       let added = 0;
       newItems.forEach(item => {
-        if (item.name && item.pts !== undefined) {
-          const name = item.name.trim();
-          const existingIndex = customFoods.findIndex(f => f.name.toLowerCase() === name.toLowerCase());
+        if (item && item.name && item.pts !== undefined) {
+          const name = String(item.name).trim();
+          const existingIndex = customFoods.findIndex(f => String(f.name).toLowerCase() === name.toLowerCase());
           const foodObj = { cat: item.cat || "Importé", name, portion: item.portion || "100g", pts: parseFloat(item.pts) || 0 };
           if (existingIndex !== -1) customFoods[existingIndex] = foodObj;
           else customFoods.push(foodObj);
@@ -1017,8 +1103,31 @@ function calculateWWPoints() {
     alert("Données exportées dans le champ texte !");
   }
 
-  function getTodayKey() { return new Date().toISOString().split('T')[0]; }
-  function loadData() { return JSON.parse(localStorage.getItem('ww_data') || '{}'); }
+  // Dates locales (et non UTC) : évite de basculer sur la veille entre minuit et 1h/2h du matin en France
+  function dateToKey(d) {
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  function getTodayKey() { return dateToKey(new Date()); }
+
+  // Clé (AAAA-MM-JJ) du lundi de la semaine en cours
+  function getWeekStartKey() {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // lundi = 0, dimanche = 6
+    return dateToKey(d);
+  }
+
+  function loadData() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem('ww_data') || '{}');
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
   function saveData(data) { localStorage.setItem('ww_data', JSON.stringify(data)); updateUI(); }
 
   function addEntry(type) {
@@ -1041,11 +1150,11 @@ function calculateWWPoints() {
     } else {
       const name = document.getElementById('sport-search').value || 'Activité';
       const duration = parseFloat(document.getElementById('sport-duration').value) || 0;
-      const matchedSport = SPORT_DATABASE.find(s => s.name.toLowerCase() === name.toLowerCase());
-      let pts = matchedSport ? Math.round((duration / matchedSport.refDur) * matchedSport.pts * 10) / 10 : Math.round((duration / 15) * 1.5 * 10) / 10;
+      const matchedSport = SPORT_DATABASE.find(s => s.name.toLowerCase() === name.trim().toLowerCase());
+      let pts = matchedSport ? round1((duration / matchedSport.refDur) * matchedSport.pts) : round1((duration / 15) * 1.5);
 
       data[today].entries.push({ id: Date.now(), type: 'sport', name, duration, pts, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
-      data[today].sportPts += pts;
+      data[today].sportPts = round1((data[today].sportPts || 0) + pts);
       document.getElementById('sport-search').value = '';
       document.getElementById('sport-duration').value = '';
     }
@@ -1059,7 +1168,7 @@ function calculateWWPoints() {
       const entryIndex = data[dateKey].entries.findIndex(e => e.id === entryId);
       if (entryIndex !== -1) {
         const entry = data[dateKey].entries[entryIndex];
-        if (entry.type === 'sport') data[dateKey].sportPts = Math.max(0, data[dateKey].sportPts - entry.pts);
+        if (entry.type === 'sport') data[dateKey].sportPts = Math.max(0, round1((data[dateKey].sportPts || 0) - entry.pts));
         data[dateKey].entries.splice(entryIndex, 1);
         saveData(data);
       }
@@ -1070,66 +1179,74 @@ function calculateWWPoints() {
     const today = getTodayKey();
     const data = loadData();
     const dayData = data[today] || { entries: [], sportPts: 0 };
+    const daySport = dayData.sportPts || 0;
 
     let foodPtsUsed = 0;
     dayData.entries.filter(e => e.type === 'food').forEach(e => foodPtsUsed += e.pts);
 
-    let dailyLeft = DAILY_BUDGET - foodPtsUsed;
-    let weeklyLeft = WEEKLY_BUDGET + dayData.sportPts;
+    let dailyLeft = Math.max(0, DAILY_BUDGET - foodPtsUsed);
 
-    if (dailyLeft < 0) {
-      weeklyLeft += dailyLeft;
-      dailyLeft = 0;
-    }
+    // Réserve hebdo : 28 points remis à zéro chaque lundi. Sur la semaine en cours (lundi -> aujourd'hui) :
+    // + points sport de chaque jour, - dépassements du budget journalier de chaque jour.
+    const weekStart = getWeekStartKey();
+    let weeklyLeft = WEEKLY_BUDGET;
+    Object.keys(data).forEach(key => {
+      if (key < weekStart || key > today) return;
+      const d = data[key];
+      if (!d || !Array.isArray(d.entries)) return;
+      let food = 0;
+      d.entries.filter(e => e.type === 'food').forEach(e => food += e.pts);
+      weeklyLeft += (d.sportPts || 0) - Math.max(0, food - DAILY_BUDGET);
+    });
 
-    document.getElementById('disp-daily-left').innerText = Math.round(dailyLeft * 10) / 10;
-    document.getElementById('disp-weekly-left').innerText = Math.max(0, Math.round(weeklyLeft * 10) / 10);
-    document.getElementById('disp-sport-pts').innerText = dayData.sportPts;
+    document.getElementById('disp-daily-left').innerText = round1(dailyLeft);
+    document.getElementById('disp-weekly-left').innerText = Math.max(0, round1(weeklyLeft));
+    document.getElementById('disp-sport-pts').innerText = round1(daySport);
 
     const logList = document.getElementById('today-log-list');
-    logList.innerHTML = dayData.entries.length === 0 ? '<p style="color:#aaa;">Rien de saisi aujourd\'hui</p>' : '';
-    dayData.entries.forEach(e => {
-      logList.innerHTML += `
+    if (dayData.entries.length === 0) {
+      logList.innerHTML = '<p style="color:#aaa;">Rien de saisi aujourd\'hui</p>';
+    } else {
+      logList.innerHTML = dayData.entries.map(e => `
         <div class="log-item">
           <div>
-            <strong>${e.name}</strong> <small>(${e.time})</small>
+            <strong>${escapeHtml(e.name)}</strong> <small>(${escapeHtml(e.time)})</small>
           </div>
           <div>
             <span class="badge ${e.type === 'food' ? 'badge-food' : 'badge-sport'}">
               ${e.type === 'food' ? '-' + e.pts + ' SP' : '+' + e.pts + ' Pts Sport'}
             </span>
-            <button class="btn-del" onclick="deleteEntry('${today}', ${e.id})">🗑️</button>
+            <button class="btn-del" onclick="deleteEntry('${today}', ${Number(e.id)})">🗑️</button>
           </div>
-        </div>`;
-    });
+        </div>`).join('');
+    }
 
     const historyList = document.getElementById('history-list');
-    historyList.innerHTML = '';
-    Object.keys(data).sort().reverse().forEach(date => {
+    historyList.innerHTML = Object.keys(data).sort().reverse().map(date => {
       let dayTotalFood = 0;
       data[date].entries.filter(e => e.type === 'food').forEach(e => dayTotalFood += e.pts);
-      let detailsHtml = data[date].entries.map(e => `
+      const detailsHtml = data[date].entries.map(e => `
         <div style="font-size:0.85rem; color:#555; margin-top:4px;">
-          • ${e.name} (${e.type === 'food' ? e.pts + ' SP' : '+' + e.pts + ' Pts Sport'})
+          • ${escapeHtml(e.name)} (${e.type === 'food' ? e.pts + ' SP' : '+' + e.pts + ' Pts Sport'})
         </div>
       `).join('');
 
-      historyList.innerHTML += `
+      return `
         <div class="history-card">
           <div class="flex-between">
-            <strong>📅 ${date}</strong>
-            <small>${Math.round(dayTotalFood * 10) / 10} SP | +${data[date].sportPts} Pts Sport</small>
+            <strong>📅 ${escapeHtml(date)}</strong>
+            <small>${round1(dayTotalFood)} SP | +${round1(data[date].sportPts)} Pts Sport</small>
           </div>
           ${detailsHtml}
         </div>`;
-    });
+    }).join('');
   }
 
-  function switchTab(tab) {
+  function switchTab(tab, btn) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
-    event.target.classList.add('active');
+    if (btn) btn.classList.add('active');
   }
 
   // Activation du Service Worker pour le mode Hors-ligne / Zone Blanche
@@ -1143,93 +1260,224 @@ function calculateWWPoints() {
     navigator.serviceWorker.register(swUrl).catch(err => console.log('SW Offline non requis si local', err));
   }
 
+  // ---------- Scanner de code-barres ----------
+  const btnScan = document.getElementById('btn-scan');
+  const btnCloseScanner = document.getElementById('btn-close-scanner');
+  const scannerContainer = document.getElementById('scanner-container');
+  const video = document.getElementById('scanner-video');
+
+  const BARCODE_FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e'];
+  // Safari / iPhone n'a pas BarcodeDetector : on charge alors ZXing (une seule fois, depuis internet)
+  const ZXING_URL = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+
+  let mediaStream = null;
+  let detectionInterval = null;
+  let detectBusy = false;
+
+  const scanCanvas = document.createElement('canvas');
+  const scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
+
+  function loadZXing() {
+    if (window.ZXing) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = ZXING_URL;
+      s.onload = resolve;
+      s.onerror = () => reject(new Error('Chargement de ZXing impossible'));
+      document.head.appendChild(s);
+    });
+  }
+
+  // Renvoie une fonction asynchrone qui lit une image de la vidéo et renvoie le code (ou null)
+  async function createDetector() {
+    if ('BarcodeDetector' in window) {
+      try {
+        const native = new BarcodeDetector({ formats: BARCODE_FORMATS });
+        return async () => {
+          const found = await native.detect(video);
+          return found.length > 0 ? found[0].rawValue : null;
+        };
+      } catch (e) {
+        console.warn('BarcodeDetector indisponible, bascule sur ZXing', e);
+      }
+    }
+
+    await loadZXing();
+    const hints = new Map();
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+      ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8,
+      ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E
+    ]);
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+    const reader = new ZXing.MultiFormatReader();
+    reader.setHints(hints);
+
+    return async () => {
+      const vw = video.videoWidth, vh = video.videoHeight;
+      if (!vw || !vh) return null;
+      const scale = Math.min(1, 1280 / vw);
+      scanCanvas.width = Math.round(vw * scale);
+      scanCanvas.height = Math.round(vh * scale);
+      scanCtx.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
+      try {
+        const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(new ZXing.HTMLCanvasElementLuminanceSource(scanCanvas)));
+        return reader.decode(bitmap).getText();
+      } catch (e) {
+        return null; // aucun code lisible sur cette image
+      }
+    };
+  }
+
+  async function getCameraStream() {
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: "environment" } },
+        audio: false
+      });
+    } catch (err) {
+      // Pas de caméra arrière : on retente avec n'importe quelle caméra
+      if (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError') {
+        return await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
+      throw err;
+    }
+  }
+
+  async function startScanner() {
+    if (mediaStream) return; // scanner déjà ouvert
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("Caméra indisponible (la page doit être ouverte en HTTPS).");
+      return;
+    }
+
+    try {
+      mediaStream = await getCameraStream();
+      video.srcObject = mediaStream;
+      scannerContainer.classList.add('visible');
+      await video.play();
+
+      const detect = await createDetector();
+      if (!mediaStream) return; // scan annulé pendant le chargement
+
+      detectionInterval = setInterval(async () => {
+        if (detectBusy || !detectionInterval) return;
+        detectBusy = true;
+        try {
+          const code = await detect();
+          if (code && detectionInterval) {
+            stopScanner();
+            onBarcodeDetected(code);
+          }
+        } catch (err) {
+          console.error("Erreur lors de la détection :", err);
+        } finally {
+          detectBusy = false;
+        }
+      }, 300);
+
+    } catch (err) {
+      console.error("Erreur d'accès à la caméra ou au lecteur :", err);
+      stopScanner();
+      alert("Impossible de démarrer le scanner (caméra refusée, indisponible, ou lecteur non chargé : vérifie ta connexion).");
+    }
+  }
+
+  function stopScanner() {
+    if (detectionInterval) {
+      clearInterval(detectionInterval);
+      detectionInterval = null;
+    }
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(track => track.stop());
+      mediaStream = null;
+    }
+    video.srcObject = null;
+    scannerContainer.classList.remove('visible');
+  }
+
+  // ---------- Open Food Facts : code-barres -> Calculateur ----------
+  function parseNum(v) {
+    if (v === undefined || v === null || v === '') return null;
+    const n = parseFloat(String(v).replace(',', '.'));
+    return isNaN(n) ? null : n;
+  }
+
+  async function lookupBarcode(code) {
+    const display = document.getElementById('calc-result-display');
+    const fields = { name: 'calc-name', cal: 'calc-cal', sat: 'calc-sat', sug: 'calc-sug', pro: 'calc-pro' };
+
+    // Repart d'un calculateur vide pour ne pas mélanger avec un produit précédent
+    Object.values(fields).forEach(id => document.getElementById(id).value = '');
+    display.innerText = '🔎 Recherche du produit sur Open Food Facts…';
+    document.getElementById('calc-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    let json = null;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
+    try {
+      const url = 'https://world.openfoodfacts.org/api/v2/product/' + encodeURIComponent(code) +
+        '?fields=product_name,product_name_fr,generic_name,brands,nutriments';
+      const res = await fetch(url, { signal: controller.signal });
+      json = await res.json().catch(() => null); // une 404 renvoie quand même un JSON exploitable
+    } catch (e) {
+      display.innerText = "⚠️ Impossible de joindre Open Food Facts (connexion ?). Réessaie.";
+      return;
+    } finally {
+      clearTimeout(timer);
+    }
+
+    if (!json || json.status !== 1 || !json.product) {
+      display.innerText = `⚠️ Produit introuvable dans Open Food Facts (code ${code}). Saisis les valeurs à la main.`;
+      return;
+    }
+
+    const prod = json.product;
+    const n = prod.nutriments || {};
+
+    let kcal = parseNum(n['energy-kcal_100g']);
+    if (kcal === null) {
+      const kj = parseNum(n['energy_100g']); // en kJ chez Open Food Facts
+      if (kj !== null) kcal = kj / 4.184;
+    }
+    const sat = parseNum(n['saturated-fat_100g']);
+    const sug = parseNum(n['sugars_100g']);
+    const pro = parseNum(n['proteins_100g']);
+
+    const baseName = (prod.product_name_fr || prod.product_name || prod.generic_name || '').trim() || `Produit ${code}`;
+    const brand = (prod.brands || '').split(',')[0].trim();
+
+    document.getElementById(fields.name).value = brand ? `${baseName} – ${brand}` : baseName;
+    document.getElementById(fields.cal).value = kcal !== null ? Math.round(kcal) : '';
+    document.getElementById(fields.sat).value = sat !== null ? round1(sat) : '';
+    document.getElementById(fields.sug).value = sug !== null ? round1(sug) : '';
+    document.getElementById(fields.pro).value = pro !== null ? round1(pro) : '';
+
+    if (kcal === null) {
+      display.innerText = "⚠️ Calories absentes de la fiche Open Food Facts : complète les champs puis clique sur « Calculer les points ».";
+      return;
+    }
+
+    calculateWWPoints(); // formule : (cal ÷ 33) + (sat × 0.36) + (sucres ÷ 4) − (protéines ÷ 11)
+
+    const missing = [];
+    if (sat === null) missing.push('graisses saturées');
+    if (sug === null) missing.push('sucres');
+    if (pro === null) missing.push('protéines');
+    if (missing.length) {
+      display.innerText += `\n⚠️ Non renseigné(es) sur la fiche, compté(es) comme 0 : ${missing.join(', ')}.`;
+    }
+  }
+
+  function onBarcodeDetected(barcode) {
+    lookupBarcode(barcode);
+  }
+
+  btnScan.addEventListener('click', startScanner);
+  btnCloseScanner.addEventListener('click', stopScanner);
 
   initDatalists();
   updateUI();
-   <script>
-    const btnScan = document.getElementById('btn-scan');
-    const btnCloseScanner = document.getElementById('btn-close-scanner');
-    const scannerContainer = document.getElementById('scanner-container');
-    const video = document.getElementById('scanner-video');
-
-    let mediaStream = null;
-    let detectionInterval = null;
-
-    function isBarcodeDetectorSupported() {
-      return 'BarcodeDetector' in window;
-    }
-
-    async function startScanner() {
-      if (!isBarcodeDetectorSupported()) {
-        alert("L'API native BarcodeDetector n'est pas supportée par ce navigateur. Assurez-vous d'utiliser iOS 17+ / Safari récent.");
-        return;
-      }
-
-      try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { exact: "environment" } },
-          audio: false
-        });
-
-        video.srcObject = mediaStream;
-        await video.play();
-
-        scannerContainer.style.display = 'flex';
-
-        const barcodeDetector = new BarcodeDetector({
-          formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e']
-        });
-
-        detectionInterval = setInterval(async () => {
-          try {
-            const barcodes = await barcodeDetector.detect(video);
-            if (barcodes.length > 0) {
-              const scannedCode = barcodes[0].rawValue;
-              stopScanner();
-              onBarcodeDetected(scannedCode);
-            }
-          } catch (err) {
-            console.error("Erreur lors de la détection :", err);
-          }
-        }, 300);
-
-      } catch (err) {
-        console.error("Erreur d'accès à la caméra :", err);
-        if (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError') {
-          try {
-            mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-            video.srcObject = mediaStream;
-            await video.play();
-            scannerContainer.style.display = 'flex';
-          } catch (fallbackErr) {
-            alert("Impossible d'accéder à la caméra de votre appareil.");
-          }
-        } else {
-          alert("Accès à la caméra refusé ou non disponible.");
-        }
-      }
-    }
-
-    function stopScanner() {
-      if (detectionInterval) {
-        clearInterval(detectionInterval);
-        detectionInterval = null;
-      }
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(track => track.stop());
-        mediaStream = null;
-      }
-      video.srcObject = null;
-      scannerContainer.style.display = 'none';
-    }
-
-    function onBarcodeDetected(barcode) {
-      alert("Code-barres détecté : " + barcode);
-    }
-
-    btnScan.addEventListener('click', startScanner);
-    btnCloseScanner.addEventListener('click', stopScanner);
-  </script>
 </script>
 </body>
 </html>
