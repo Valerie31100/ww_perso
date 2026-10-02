@@ -254,6 +254,7 @@
         <div class="stat-lbl">Pts Sport du jour</div>
       </div>
     </div>
+    <div id="rollover-info" class="sub-text" style="margin:-6px 4px 14px 4px;"></div>
 
     <!-- Saisie Aliment -->
     <div class="card">
@@ -361,6 +362,7 @@
 <script>
   const DAILY_BUDGET = 23;
   const WEEKLY_BUDGET = 28;
+  const ROLLOVER_MAX = 4; // jusqu'à 4 points journaliers non utilisés sont reportés dans la réserve hebdo
   let currentRefPts = 0;
 
    const FOOD_DATABASE = [
@@ -574,6 +576,11 @@
     { "cat": "Plats en sauce & Mijotés", "name": "Cannelloni boeuf ou ricota d'épinards", "portion": "1 part (250 g)", "pts": 10 },
     { "cat": "Plats en sauce & Mijotés", "name": "Gratin dauphinois classique", "portion": "1 part (200 g)", "pts": 9 },
     { "cat": "Plats en sauce & Mijotés", "name": "Endives au jambon (avec béchamel)", "portion": "2 endives garnies (300 g)", "pts": 8 },
+    { "cat": "Pâtisseries & Sucreries", "name": "Brioche industrielle", "portion": "1 tranche (25 g)", "pts": 3 },
+    { "cat": "Pâtisseries & Sucreries", "name": "Croissant de boulangerie", "portion": "1 pièce (50 g)", "pts": 6 },
+    { "cat": "Pâtisseries & Sucreries", "name": "Éclair au chocolat", "portion": "1 pièce (100 g)", "pts": 9 },
+    { "cat": "Pâtisseries & Sucreries", "name": "Nutella / Pâte à tartiner", "portion": "1 C.à.S (20 g)", "pts": 6},
+    { "cat": "Pâtisseries & Sucreries", "name": "Chocolatine", "portion": "1 pièce (60 g)", "pts": 8 },
     { "cat": "Condiment", "name": "Moutarde", "portion": "à volonté", "pts": 0 },
     { "cat": "Condiment", "name": "Ketchup", "portion": "1 cuillère à soupe (20 g)", "pts": 1 },
     { "cat": "Condiment", "name": "Mayonnaise industrielle", "portion": "1 cuillère à soupe (20 g)", "pts": 3 },
@@ -953,44 +960,25 @@
     { "cat": "Volailles & Viandes", "name": "Travers de porc / Ribs", "portion": "1 portion (150 g)", "pts": 10 },
 
     // ---------- Fond de cuisine (ingrédients de base) ----------
-    { "cat": "Fond de cuisine", "name": "Sucre blanc (poudre / semoule / cristallisé)", "portion": "1 C.à.C (5 g)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Sucre blanc (poudre / semoule / cristallisé)", "portion": "1 C.à.S (15 g)", "pts": 4 },
-    { "cat": "Fond de cuisine", "name": "Sucre blanc (poudre / semoule / cristallisé)", "portion": "1 morceau (6 g)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Sucre roux / Cassonade", "portion": "1 C.à.C (5 g)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Sucre roux / Cassonade", "portion": "1 C.à.S (15 g)", "pts": 4 },
-    { "cat": "Fond de cuisine", "name": "Sucre glace", "portion": "1 C.à.S (10 g)", "pts": 2 },
+    { "cat": "Fond de cuisine", "name": "Sucre 5G", "portion": "1 C.à.C (5 g)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Sucre 15G", "portion": "1 C.à.S (15 g)", "pts": 4 },
+    { "cat": "Fond de cuisine", "name": "Sucre 1 morceau", "portion": "1 morceau (6 g)", "pts": 1 },
+     { "cat": "Fond de cuisine", "name": "Sucre glace", "portion": "1 C.à.S (10 g)", "pts": 2 },
     { "cat": "Fond de cuisine", "name": "Sucre vanillé", "portion": "1 sachet (7,5 g)", "pts": 2 },
-    { "cat": "Fond de cuisine", "name": "Miel", "portion": "1 C.à.C (7 g)", "pts": 1 },
     { "cat": "Fond de cuisine", "name": "Miel", "portion": "1 C.à.S (20 g)", "pts": 4 },
     { "cat": "Fond de cuisine", "name": "Sirop d'érable", "portion": "1 C.à.S (20 g)", "pts": 3 },
     { "cat": "Fond de cuisine", "name": "Sirop d'agave", "portion": "1 C.à.S (20 g)", "pts": 4 },
     { "cat": "Fond de cuisine", "name": "Confiture classique", "portion": "1 C.à.S (20 g)", "pts": 3 },
     { "cat": "Fond de cuisine", "name": "Édulcorant (stévia, aspartame, sucralose...)", "portion": "à volonté", "pts": 0 },
-    { "cat": "Fond de cuisine", "name": "Farine de blé (T45 / T55 / T65)", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Farine de blé (T45 / T55 / T65)", "portion": "100 g", "pts": 10 },
-    { "cat": "Fond de cuisine", "name": "Farine de blé complète (T110 / T150)", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Farine de blé complète (T110 / T150)", "portion": "100 g", "pts": 9 },
-    { "cat": "Fond de cuisine", "name": "Farine de riz", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Farine de riz", "portion": "100 g", "pts": 10 },
-    { "cat": "Fond de cuisine", "name": "Farine de sarrasin", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Farine de sarrasin", "portion": "100 g", "pts": 9 },
-    { "cat": "Fond de cuisine", "name": "Farine d'épeautre", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Farine d'épeautre", "portion": "100 g", "pts": 9 },
-    { "cat": "Fond de cuisine", "name": "Farine de seigle", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Farine de seigle", "portion": "100 g", "pts": 10 },
-    { "cat": "Fond de cuisine", "name": "Farine de pois chiche", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Farine de pois chiche", "portion": "100 g", "pts": 10 },
-    { "cat": "Fond de cuisine", "name": "Farine de maïs", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Farine de maïs", "portion": "100 g", "pts": 10 },
+    { "cat": "Fond de cuisine", "name": "Farine 10G", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Farine 100G", "portion": "100 g", "pts": 10 },
+    { "cat": "Fond de cuisine", "name": "Farine complète 10G", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Farine complète 100G", "portion": "100 g", "pts": 9 },
     { "cat": "Fond de cuisine", "name": "Maïzena (fécule de maïs)", "portion": "1 C.à.S (10 g)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Maïzena (fécule de maïs)", "portion": "100 g", "pts": 11 },
     { "cat": "Fond de cuisine", "name": "Fécule de pomme de terre", "portion": "1 C.à.S (10 g)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Fécule de pomme de terre", "portion": "100 g", "pts": 10 },
     { "cat": "Fond de cuisine", "name": "Chapelure", "portion": "1 C.à.S (10 g)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Chapelure", "portion": "100 g", "pts": 10 },
     { "cat": "Fond de cuisine", "name": "Polenta / Semoule de maïs (crue)", "portion": "30 g", "pts": 3 },
     { "cat": "Fond de cuisine", "name": "Poudre d'amandes", "portion": "1 C.à.S (10 g)", "pts": 2 },
-    { "cat": "Fond de cuisine", "name": "Poudre d'amandes", "portion": "100 g", "pts": 18 },
     { "cat": "Fond de cuisine", "name": "Gélatine alimentaire (feuille)", "portion": "1 feuille (2 g)", "pts": 0 },
     { "cat": "Fond de cuisine", "name": "Agar-agar", "portion": "1 C.à.C (3 g)", "pts": 0 },
     { "cat": "Fond de cuisine", "name": "Levure chimique", "portion": "1 sachet (11 g)", "pts": 0 },
@@ -999,52 +987,31 @@
     { "cat": "Fond de cuisine", "name": "Bicarbonate de soude", "portion": "1 C.à.C (5 g)", "pts": 0 },
     { "cat": "Fond de cuisine", "name": "Extrait / arôme de vanille, fleur d'oranger", "portion": "quelques gouttes", "pts": 0 },
     { "cat": "Fond de cuisine", "name": "Cacao en poudre non sucré", "portion": "1 C.à.C (5 g)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Cacao en poudre non sucré", "portion": "1 C.à.S (10 g)", "pts": 1 },
     { "cat": "Fond de cuisine", "name": "Chocolat en poudre sucré (type Banania, Nesquik)", "portion": "1 C.à.S (10 g)", "pts": 2 },
     { "cat": "Fond de cuisine", "name": "Chocolat noir pâtissier", "portion": "1 carré (10 g)", "pts": 3 },
-    { "cat": "Fond de cuisine", "name": "Chocolat noir pâtissier", "portion": "100 g", "pts": 26 },
     { "cat": "Fond de cuisine", "name": "Chocolat noir 70 %", "portion": "1 carré (10 g)", "pts": 3 },
-    { "cat": "Fond de cuisine", "name": "Chocolat noir 70 %", "portion": "100 g", "pts": 26 },
     { "cat": "Fond de cuisine", "name": "Chocolat au lait pâtissier", "portion": "1 carré (10 g)", "pts": 3 },
-    { "cat": "Fond de cuisine", "name": "Chocolat au lait pâtissier", "portion": "100 g", "pts": 27 },
     { "cat": "Fond de cuisine", "name": "Chocolat blanc pâtissier", "portion": "1 carré (10 g)", "pts": 3 },
-    { "cat": "Fond de cuisine", "name": "Chocolat blanc pâtissier", "portion": "100 g", "pts": 28 },
-    { "cat": "Fond de cuisine", "name": "Pâte brisée (rouleau prêt à dérouler)", "portion": "100 g", "pts": 16 },
-    { "cat": "Fond de cuisine", "name": "Pâte brisée (rouleau prêt à dérouler)", "portion": "1 rouleau (230 g)", "pts": 36 },
-    { "cat": "Fond de cuisine", "name": "Pâte feuilletée pur beurre (rouleau)", "portion": "100 g", "pts": 19 },
+    { "cat": "Fond de cuisine", "name": "Pâte brisée 100G ", "portion": "100 g", "pts": 16 },
+    { "cat": "Fond de cuisine", "name": "Pâte brisée (rouleau)", "portion": "1 rouleau (230 g)", "pts": 36 },
+    { "cat": "Fond de cuisine", "name": "Pâte feuilletée pur beurre 100G", "portion": "100 g", "pts": 19 },
     { "cat": "Fond de cuisine", "name": "Pâte feuilletée pur beurre (rouleau)", "portion": "1 rouleau (230 g)", "pts": 43 },
-    { "cat": "Fond de cuisine", "name": "Pâte sablée (rouleau)", "portion": "100 g", "pts": 19 },
+    { "cat": "Fond de cuisine", "name": "Pâte sablée 100G", "portion": "100 g", "pts": 19 },
     { "cat": "Fond de cuisine", "name": "Pâte sablée (rouleau)", "portion": "1 rouleau (230 g)", "pts": 43 },
-    { "cat": "Fond de cuisine", "name": "Pâte à pizza (rouleau)", "portion": "100 g", "pts": 8 },
+    { "cat": "Fond de cuisine", "name": "Pâte à pizza 100G", "portion": "100 g", "pts": 8 },
     { "cat": "Fond de cuisine", "name": "Pâte à pizza (rouleau)", "portion": "1 rouleau (260 g)", "pts": 21 },
     { "cat": "Fond de cuisine", "name": "Feuille de brick", "portion": "1 feuille (17 g)", "pts": 1 },
     { "cat": "Fond de cuisine", "name": "Pâte filo", "portion": "1 feuille (25 g)", "pts": 2 },
-    { "cat": "Fond de cuisine", "name": "Huile d'olive", "portion": "1 C.à.C (5 ml)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Huile d'olive", "portion": "1 C.à.S (15 ml)", "pts": 4 },
-    { "cat": "Fond de cuisine", "name": "Huile de tournesol", "portion": "1 C.à.C (5 ml)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Huile de tournesol", "portion": "1 C.à.S (15 ml)", "pts": 4 },
-    { "cat": "Fond de cuisine", "name": "Huile de colza", "portion": "1 C.à.C (5 ml)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Huile de colza", "portion": "1 C.à.S (15 ml)", "pts": 4 },
-    { "cat": "Fond de cuisine", "name": "Huile d'arachide", "portion": "1 C.à.C (5 ml)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Huile d'arachide", "portion": "1 C.à.S (15 ml)", "pts": 4 },
-    { "cat": "Fond de cuisine", "name": "Huile de pépins de raisin", "portion": "1 C.à.C (5 ml)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Huile de pépins de raisin", "portion": "1 C.à.S (15 ml)", "pts": 4 },
-    { "cat": "Fond de cuisine", "name": "Huile de maïs", "portion": "1 C.à.C (5 ml)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Huile de maïs", "portion": "1 C.à.S (15 ml)", "pts": 4 },
-    { "cat": "Fond de cuisine", "name": "Huile de sésame", "portion": "1 C.à.C (5 ml)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Huile de sésame", "portion": "1 C.à.S (15 ml)", "pts": 4 },
-    { "cat": "Fond de cuisine", "name": "Huile de noix", "portion": "1 C.à.C (5 ml)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Huile de noix", "portion": "1 C.à.S (15 ml)", "pts": 4 },
-    { "cat": "Fond de cuisine", "name": "Huile de coco", "portion": "1 C.à.C (5 ml)", "pts": 2 },
-    { "cat": "Fond de cuisine", "name": "Huile de coco", "portion": "1 C.à.S (15 ml)", "pts": 7 },
-    { "cat": "Fond de cuisine", "name": "Margarine végétale classique (80 % MG)", "portion": "1 C.à.C (5 g)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Margarine végétale classique (80 % MG)", "portion": "1 C.à.S (15 g)", "pts": 4 },
-    { "cat": "Fond de cuisine", "name": "Margarine allégée (40 % MG)", "portion": "1 C.à.C (5 g)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Margarine allégée (40 % MG)", "portion": "1 C.à.S (15 g)", "pts": 2 },
-    { "cat": "Fond de cuisine", "name": "Graisse de canard / d'oie", "portion": "1 C.à.C (5 g)", "pts": 2 },
-    { "cat": "Fond de cuisine", "name": "Graisse de canard / d'oie", "portion": "1 C.à.S (15 g)", "pts": 5 },
-    { "cat": "Fond de cuisine", "name": "Saindoux", "portion": "1 C.à.C (5 g)", "pts": 2 },
-    { "cat": "Fond de cuisine", "name": "Saindoux", "portion": "1 C.à.S (15 g)", "pts": 6 },
+    { "cat": "Fond de cuisine", "name": "Huile (sauf coco) - ccafé", "portion": "1 C.à.C (5 ml)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Huile (sauf coco) - csoupe", "portion": "1 C.à.S (15 ml)", "pts": 4 },
+    { "cat": "Fond de cuisine", "name": "Huile de coco - ccafé", "portion": "1 C.à.C (5 ml)", "pts": 2 },
+    { "cat": "Fond de cuisine", "name": "Huile de coco - csoupe", "portion": "1 C.à.S (15 ml)", "pts": 7 },
+    { "cat": "Fond de cuisine", "name": "Margarine classique - 5G ", "portion": "1 C.à.C (5 g)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Margarine classique - 15G ", "portion": "1 C.à.S (15 g)", "pts": 4 },
+    { "cat": "Fond de cuisine", "name": "Margarine allégée - 5G ", "portion": "1 C.à.C (5 g)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Margarine allégée - 15G ", "portion": "1 C.à.S (15 g)", "pts": 2 },
+    { "cat": "Fond de cuisine", "name": "Graisse de canard / d'oie - 5G", "portion": "1 C.à.C (5 g)", "pts": 2 },
+    { "cat": "Fond de cuisine", "name": "Graisse de canard / d'oie - 15G", "portion": "1 C.à.S (15 g)", "pts": 5 },
     { "cat": "Fond de cuisine", "name": "Vinaigrette classique (huile + vinaigre)", "portion": "1 C.à.S (15 g)", "pts": 2 },
     { "cat": "Fond de cuisine", "name": "Tahini (purée de sésame)", "portion": "1 C.à.S (15 g)", "pts": 3 },
     { "cat": "Fond de cuisine", "name": "Graines de sésame", "portion": "1 C.à.C (5 g)", "pts": 1 },
@@ -1422,9 +1389,12 @@
     let dailyLeft = Math.max(0, DAILY_BUDGET - foodPtsUsed);
 
     // Réserve hebdo : 28 points remis à zéro chaque lundi. Sur la semaine de la journée affichée
-    // (lundi -> cette journée) : + points sport de chaque jour, - dépassements du budget journalier de chaque jour.
+    // (lundi -> cette journée) : + points sport de chaque jour, - dépassements du budget journalier de chaque jour,
+    // + reports : jusqu'à 4 points journaliers non utilisés (comptés une fois la journée terminée,
+    // et seulement les jours où au moins un aliment a été saisi).
     const weekStart = getWeekStartKey(activeKey);
     let weeklyLeft = WEEKLY_BUDGET;
+    let rolloverTotal = 0;
     Object.keys(data).forEach(key => {
       if (key < weekStart || key > activeKey) return;
       const d = data[key];
@@ -1432,7 +1402,21 @@
       let food = 0;
       d.entries.filter(e => e.type === 'food').forEach(e => food += e.pts);
       weeklyLeft += (d.sportPts || 0) - Math.max(0, food - DAILY_BUDGET);
+      if (key < todayKey && d.entries.some(e => e.type === 'food') && food < DAILY_BUDGET) {
+        const roll = Math.min(ROLLOVER_MAX, DAILY_BUDGET - food);
+        weeklyLeft += roll;
+        rolloverTotal += roll;
+      }
     });
+
+    // Information sur les reports
+    let rollInfo = rolloverTotal > 0
+      ? `Reports de la semaine : +${round1(rolloverTotal)} pt(s) (max ${ROLLOVER_MAX} par jour)`
+      : `Reports de la semaine : aucun (max ${ROLLOVER_MAX} pts non utilisés par jour)`;
+    if (isToday && dayData.entries.some(e => e.type === 'food') && foodPtsUsed < DAILY_BUDGET) {
+      rollInfo += ` · report prévu ce soir : +${round1(Math.min(ROLLOVER_MAX, DAILY_BUDGET - foodPtsUsed))}`;
+    }
+    document.getElementById('rollover-info').innerText = rollInfo;
 
     document.getElementById('disp-daily-left').innerText = round1(dailyLeft);
     document.getElementById('disp-weekly-left').innerText = Math.max(0, round1(weeklyLeft));
