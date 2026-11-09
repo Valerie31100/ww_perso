@@ -304,6 +304,21 @@
 
     <div id="calc-result-display" style="margin-top: 10px; font-weight: bold; color: #8e44ad; text-align: center; font-size: 1.1rem;"></div>
 
+    <!-- Ajout direct : points + portion (sans valeurs nutritionnelles) -->
+    <div class="card" id="direct-card">
+      <h3>➕ Ajouter un aliment avec ses points</h3>
+      <input type="text" id="direct-name" placeholder="Nom de l'aliment (ex: Pizza Margherita)">
+
+      <label style="font-size:0.8rem; color:#666;">Catégorie de l'aliment :</label>
+      <select id="direct-cat"></select>
+
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="direct-portion" placeholder="Portion (ex: 1/2 pizza, 125 g)">
+        <input type="text" id="direct-pts" inputmode="decimal" placeholder="Points (ex: 7 ou 1,5)">
+      </div>
+      <button onclick="saveDirectFood()" style="background:#27ae60;">💾 Enregistrer dans la base</button>
+    </div>
+
     <!-- Saisie Activité -->
     <div class="card">
       <h3>🏃 Rechercher ou ajouter une activité</h3>
@@ -383,6 +398,8 @@
     { "cat": "Boissons (Sans Alcool)", "name": "Sirop de fruits classique avec eau", "portion": "1 cuillère à soupe (20 ml)", "pts": 3 },
     { "cat": "Boissons (Sans Alcool)", "name": "Jus de fruits pur jus (Orange, Pomme)", "portion": "1 verre (200 ml)", "pts": 4 },
     { "cat": "Boissons (Sans Alcool)", "name": "Soda classique (Coca, Fanta...)", "portion": "1 canette (330 ml)", "pts": 7 },
+    { "cat": "Boissons (Sans Alcool)", "name": "Bière sans alcool (0,0%) - Demi", "portion": "250 ml", "pts": 3 },
+    { "cat": "Boissons (Sans Alcool)", "name": "Bière sans alcool (0,0%) - Bouteille", "portion": "330 ml", "pts": 4 },
     { "cat": "Charcuterie", "name": "Paté de campagne", "portion": "30 g", "pts": 3 },
     { "cat": "Charcuterie", "name": "Jambon blanc / cuit supérieur (découenné, dégraissé)", "portion": "1 tranche (45 g)", "pts": 1 },
     { "cat": "Charcuterie", "name": "Jambon blanc à l'étouffée / au torchon", "portion": "1 tranche (45 g)", "pts": 1 },
@@ -576,11 +593,6 @@
     { "cat": "Plats en sauce & Mijotés", "name": "Cannelloni boeuf ou ricota d'épinards", "portion": "1 part (250 g)", "pts": 10 },
     { "cat": "Plats en sauce & Mijotés", "name": "Gratin dauphinois classique", "portion": "1 part (200 g)", "pts": 9 },
     { "cat": "Plats en sauce & Mijotés", "name": "Endives au jambon (avec béchamel)", "portion": "2 endives garnies (300 g)", "pts": 8 },
-    { "cat": "Pâtisseries & Sucreries", "name": "Brioche industrielle", "portion": "1 tranche (25 g)", "pts": 3 },
-    { "cat": "Pâtisseries & Sucreries", "name": "Croissant de boulangerie", "portion": "1 pièce (50 g)", "pts": 6 },
-    { "cat": "Pâtisseries & Sucreries", "name": "Éclair au chocolat", "portion": "1 pièce (100 g)", "pts": 9 },
-    { "cat": "Pâtisseries & Sucreries", "name": "Nutella / Pâte à tartiner", "portion": "1 C.à.S (20 g)", "pts": 6},
-    { "cat": "Pâtisseries & Sucreries", "name": "Chocolatine", "portion": "1 pièce (60 g)", "pts": 8 },
     { "cat": "Condiment", "name": "Moutarde", "portion": "à volonté", "pts": 0 },
     { "cat": "Condiment", "name": "Ketchup", "portion": "1 cuillère à soupe (20 g)", "pts": 1 },
     { "cat": "Condiment", "name": "Mayonnaise industrielle", "portion": "1 cuillère à soupe (20 g)", "pts": 3 },
@@ -611,6 +623,7 @@
     { "cat": "Divers", "name": "Amandes nature non salées", "portion": "20 g", "pts": 4 },
     { "cat": "Divers", "name": "Noix nature", "portion": "20 g", "pts": 5 },
     { "cat": "Divers", "name": "Noisettes natures", "portion": "20 g", "pts": 6 },
+    { "cat": "Divers", "name": "Beurre de cacahuète", "portion": "1 c. à café (8g)", "pts": 1.5 },
     { "cat": "Féculents", "name": "Pain de mie blanc", "portion": "1 tranche standard", "pts": 2 },
     { "cat": "Féculents", "name": "Quinoa Cru", "portion": "30 g", "pts": 2 },
     { "cat": "Féculents", "name": "Pâtes blanches (cuites)", "portion": "1 portion moyenne (100 g)", "pts": 3 },
@@ -958,27 +971,47 @@
     { "cat": "Volailles & Viandes", "name": "Bavette ou Faux-filet paré", "portion": "1 pièce (120 g)", "pts": 3 },
     { "cat": "Volailles & Viandes", "name": "Côte de porc avec gras", "portion": "1 pièce (120 g)", "pts": 7 },
     { "cat": "Volailles & Viandes", "name": "Travers de porc / Ribs", "portion": "1 portion (150 g)", "pts": 10 },
+    { "cat": "Volailles & Viandes", "name": "Cœur de rumsteck / Pavé de bœuf", "portion": "100 g", "pts": 2 },
 
     // ---------- Fond de cuisine (ingrédients de base) ----------
-    { "cat": "Fond de cuisine", "name": "Sucre 5G", "portion": "1 C.à.C (5 g)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Sucre 15G", "portion": "1 C.à.S (15 g)", "pts": 4 },
-    { "cat": "Fond de cuisine", "name": "Sucre 1 morceau", "portion": "1 morceau (6 g)", "pts": 1 },
-     { "cat": "Fond de cuisine", "name": "Sucre glace", "portion": "1 C.à.S (10 g)", "pts": 2 },
+    { "cat": "Fond de cuisine", "name": "Sucre blanc (poudre / semoule / cristallisé)", "portion": "1 C.à.C (5 g)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Sucre blanc (poudre / semoule / cristallisé)", "portion": "1 C.à.S (15 g)", "pts": 4 },
+    { "cat": "Fond de cuisine", "name": "Sucre blanc (poudre / semoule / cristallisé)", "portion": "1 morceau (6 g)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Sucre roux / Cassonade", "portion": "1 C.à.C (5 g)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Sucre roux / Cassonade", "portion": "1 C.à.S (15 g)", "pts": 4 },
+    { "cat": "Fond de cuisine", "name": "Sucre glace", "portion": "1 C.à.S (10 g)", "pts": 2 },
     { "cat": "Fond de cuisine", "name": "Sucre vanillé", "portion": "1 sachet (7,5 g)", "pts": 2 },
+    { "cat": "Fond de cuisine", "name": "Miel", "portion": "1 C.à.C (7 g)", "pts": 1 },
     { "cat": "Fond de cuisine", "name": "Miel", "portion": "1 C.à.S (20 g)", "pts": 4 },
     { "cat": "Fond de cuisine", "name": "Sirop d'érable", "portion": "1 C.à.S (20 g)", "pts": 3 },
     { "cat": "Fond de cuisine", "name": "Sirop d'agave", "portion": "1 C.à.S (20 g)", "pts": 4 },
     { "cat": "Fond de cuisine", "name": "Confiture classique", "portion": "1 C.à.S (20 g)", "pts": 3 },
     { "cat": "Fond de cuisine", "name": "Édulcorant (stévia, aspartame, sucralose...)", "portion": "à volonté", "pts": 0 },
-    { "cat": "Fond de cuisine", "name": "Farine 10G", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Farine 100G", "portion": "100 g", "pts": 10 },
-    { "cat": "Fond de cuisine", "name": "Farine complète 10G", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Farine complète 100G", "portion": "100 g", "pts": 9 },
+    { "cat": "Fond de cuisine", "name": "Farine de blé (T45 / T55 / T65)", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Farine de blé (T45 / T55 / T65)", "portion": "100 g", "pts": 10 },
+    { "cat": "Fond de cuisine", "name": "Farine de blé complète (T110 / T150)", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Farine de blé complète (T110 / T150)", "portion": "100 g", "pts": 9 },
+    { "cat": "Fond de cuisine", "name": "Farine de riz", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Farine de riz", "portion": "100 g", "pts": 10 },
+    { "cat": "Fond de cuisine", "name": "Farine de sarrasin", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Farine de sarrasin", "portion": "100 g", "pts": 9 },
+    { "cat": "Fond de cuisine", "name": "Farine d'épeautre", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Farine d'épeautre", "portion": "100 g", "pts": 9 },
+    { "cat": "Fond de cuisine", "name": "Farine de seigle", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Farine de seigle", "portion": "100 g", "pts": 10 },
+    { "cat": "Fond de cuisine", "name": "Farine de pois chiche", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Farine de pois chiche", "portion": "100 g", "pts": 10 },
+    { "cat": "Fond de cuisine", "name": "Farine de maïs", "portion": "10 g (1 C.à.S rase)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Farine de maïs", "portion": "100 g", "pts": 10 },
     { "cat": "Fond de cuisine", "name": "Maïzena (fécule de maïs)", "portion": "1 C.à.S (10 g)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Maïzena (fécule de maïs)", "portion": "100 g", "pts": 11 },
     { "cat": "Fond de cuisine", "name": "Fécule de pomme de terre", "portion": "1 C.à.S (10 g)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Fécule de pomme de terre", "portion": "100 g", "pts": 10 },
     { "cat": "Fond de cuisine", "name": "Chapelure", "portion": "1 C.à.S (10 g)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Chapelure", "portion": "100 g", "pts": 10 },
     { "cat": "Fond de cuisine", "name": "Polenta / Semoule de maïs (crue)", "portion": "30 g", "pts": 3 },
     { "cat": "Fond de cuisine", "name": "Poudre d'amandes", "portion": "1 C.à.S (10 g)", "pts": 2 },
+    { "cat": "Fond de cuisine", "name": "Poudre d'amandes", "portion": "100 g", "pts": 18 },
     { "cat": "Fond de cuisine", "name": "Gélatine alimentaire (feuille)", "portion": "1 feuille (2 g)", "pts": 0 },
     { "cat": "Fond de cuisine", "name": "Agar-agar", "portion": "1 C.à.C (3 g)", "pts": 0 },
     { "cat": "Fond de cuisine", "name": "Levure chimique", "portion": "1 sachet (11 g)", "pts": 0 },
@@ -987,31 +1020,52 @@
     { "cat": "Fond de cuisine", "name": "Bicarbonate de soude", "portion": "1 C.à.C (5 g)", "pts": 0 },
     { "cat": "Fond de cuisine", "name": "Extrait / arôme de vanille, fleur d'oranger", "portion": "quelques gouttes", "pts": 0 },
     { "cat": "Fond de cuisine", "name": "Cacao en poudre non sucré", "portion": "1 C.à.C (5 g)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Cacao en poudre non sucré", "portion": "1 C.à.S (10 g)", "pts": 1 },
     { "cat": "Fond de cuisine", "name": "Chocolat en poudre sucré (type Banania, Nesquik)", "portion": "1 C.à.S (10 g)", "pts": 2 },
     { "cat": "Fond de cuisine", "name": "Chocolat noir pâtissier", "portion": "1 carré (10 g)", "pts": 3 },
+    { "cat": "Fond de cuisine", "name": "Chocolat noir pâtissier", "portion": "100 g", "pts": 26 },
     { "cat": "Fond de cuisine", "name": "Chocolat noir 70 %", "portion": "1 carré (10 g)", "pts": 3 },
+    { "cat": "Fond de cuisine", "name": "Chocolat noir 70 %", "portion": "100 g", "pts": 26 },
     { "cat": "Fond de cuisine", "name": "Chocolat au lait pâtissier", "portion": "1 carré (10 g)", "pts": 3 },
+    { "cat": "Fond de cuisine", "name": "Chocolat au lait pâtissier", "portion": "100 g", "pts": 27 },
     { "cat": "Fond de cuisine", "name": "Chocolat blanc pâtissier", "portion": "1 carré (10 g)", "pts": 3 },
-    { "cat": "Fond de cuisine", "name": "Pâte brisée 100G ", "portion": "100 g", "pts": 16 },
-    { "cat": "Fond de cuisine", "name": "Pâte brisée (rouleau)", "portion": "1 rouleau (230 g)", "pts": 36 },
-    { "cat": "Fond de cuisine", "name": "Pâte feuilletée pur beurre 100G", "portion": "100 g", "pts": 19 },
+    { "cat": "Fond de cuisine", "name": "Chocolat blanc pâtissier", "portion": "100 g", "pts": 28 },
+    { "cat": "Fond de cuisine", "name": "Pâte brisée (rouleau prêt à dérouler)", "portion": "100 g", "pts": 16 },
+    { "cat": "Fond de cuisine", "name": "Pâte brisée (rouleau prêt à dérouler)", "portion": "1 rouleau (230 g)", "pts": 36 },
+    { "cat": "Fond de cuisine", "name": "Pâte feuilletée pur beurre (rouleau)", "portion": "100 g", "pts": 19 },
     { "cat": "Fond de cuisine", "name": "Pâte feuilletée pur beurre (rouleau)", "portion": "1 rouleau (230 g)", "pts": 43 },
-    { "cat": "Fond de cuisine", "name": "Pâte sablée 100G", "portion": "100 g", "pts": 19 },
+    { "cat": "Fond de cuisine", "name": "Pâte sablée (rouleau)", "portion": "100 g", "pts": 19 },
     { "cat": "Fond de cuisine", "name": "Pâte sablée (rouleau)", "portion": "1 rouleau (230 g)", "pts": 43 },
-    { "cat": "Fond de cuisine", "name": "Pâte à pizza 100G", "portion": "100 g", "pts": 8 },
+    { "cat": "Fond de cuisine", "name": "Pâte à pizza (rouleau)", "portion": "100 g", "pts": 8 },
     { "cat": "Fond de cuisine", "name": "Pâte à pizza (rouleau)", "portion": "1 rouleau (260 g)", "pts": 21 },
     { "cat": "Fond de cuisine", "name": "Feuille de brick", "portion": "1 feuille (17 g)", "pts": 1 },
     { "cat": "Fond de cuisine", "name": "Pâte filo", "portion": "1 feuille (25 g)", "pts": 2 },
-    { "cat": "Fond de cuisine", "name": "Huile (sauf coco) - ccafé", "portion": "1 C.à.C (5 ml)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Huile (sauf coco) - csoupe", "portion": "1 C.à.S (15 ml)", "pts": 4 },
-    { "cat": "Fond de cuisine", "name": "Huile de coco - ccafé", "portion": "1 C.à.C (5 ml)", "pts": 2 },
-    { "cat": "Fond de cuisine", "name": "Huile de coco - csoupe", "portion": "1 C.à.S (15 ml)", "pts": 7 },
-    { "cat": "Fond de cuisine", "name": "Margarine classique - 5G ", "portion": "1 C.à.C (5 g)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Margarine classique - 15G ", "portion": "1 C.à.S (15 g)", "pts": 4 },
-    { "cat": "Fond de cuisine", "name": "Margarine allégée - 5G ", "portion": "1 C.à.C (5 g)", "pts": 1 },
-    { "cat": "Fond de cuisine", "name": "Margarine allégée - 15G ", "portion": "1 C.à.S (15 g)", "pts": 2 },
-    { "cat": "Fond de cuisine", "name": "Graisse de canard / d'oie - 5G", "portion": "1 C.à.C (5 g)", "pts": 2 },
-    { "cat": "Fond de cuisine", "name": "Graisse de canard / d'oie - 15G", "portion": "1 C.à.S (15 g)", "pts": 5 },
+    { "cat": "Fond de cuisine", "name": "Huile d'olive", "portion": "1 C.à.C (5 ml)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Huile d'olive", "portion": "1 C.à.S (15 ml)", "pts": 4 },
+    { "cat": "Fond de cuisine", "name": "Huile de tournesol", "portion": "1 C.à.C (5 ml)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Huile de tournesol", "portion": "1 C.à.S (15 ml)", "pts": 4 },
+    { "cat": "Fond de cuisine", "name": "Huile de colza", "portion": "1 C.à.C (5 ml)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Huile de colza", "portion": "1 C.à.S (15 ml)", "pts": 4 },
+    { "cat": "Fond de cuisine", "name": "Huile d'arachide", "portion": "1 C.à.C (5 ml)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Huile d'arachide", "portion": "1 C.à.S (15 ml)", "pts": 4 },
+    { "cat": "Fond de cuisine", "name": "Huile de pépins de raisin", "portion": "1 C.à.C (5 ml)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Huile de pépins de raisin", "portion": "1 C.à.S (15 ml)", "pts": 4 },
+    { "cat": "Fond de cuisine", "name": "Huile de maïs", "portion": "1 C.à.C (5 ml)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Huile de maïs", "portion": "1 C.à.S (15 ml)", "pts": 4 },
+    { "cat": "Fond de cuisine", "name": "Huile de sésame", "portion": "1 C.à.C (5 ml)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Huile de sésame", "portion": "1 C.à.S (15 ml)", "pts": 4 },
+    { "cat": "Fond de cuisine", "name": "Huile de noix", "portion": "1 C.à.C (5 ml)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Huile de noix", "portion": "1 C.à.S (15 ml)", "pts": 4 },
+    { "cat": "Fond de cuisine", "name": "Huile de coco", "portion": "1 C.à.C (5 ml)", "pts": 2 },
+    { "cat": "Fond de cuisine", "name": "Huile de coco", "portion": "1 C.à.S (15 ml)", "pts": 7 },
+    { "cat": "Fond de cuisine", "name": "Margarine végétale classique (80 % MG)", "portion": "1 C.à.C (5 g)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Margarine végétale classique (80 % MG)", "portion": "1 C.à.S (15 g)", "pts": 4 },
+    { "cat": "Fond de cuisine", "name": "Margarine allégée (40 % MG)", "portion": "1 C.à.C (5 g)", "pts": 1 },
+    { "cat": "Fond de cuisine", "name": "Margarine allégée (40 % MG)", "portion": "1 C.à.S (15 g)", "pts": 2 },
+    { "cat": "Fond de cuisine", "name": "Graisse de canard / d'oie", "portion": "1 C.à.C (5 g)", "pts": 2 },
+    { "cat": "Fond de cuisine", "name": "Graisse de canard / d'oie", "portion": "1 C.à.S (15 g)", "pts": 5 },
+    { "cat": "Fond de cuisine", "name": "Saindoux", "portion": "1 C.à.C (5 g)", "pts": 2 },
+    { "cat": "Fond de cuisine", "name": "Saindoux", "portion": "1 C.à.S (15 g)", "pts": 6 },
     { "cat": "Fond de cuisine", "name": "Vinaigrette classique (huile + vinaigre)", "portion": "1 C.à.S (15 g)", "pts": 2 },
     { "cat": "Fond de cuisine", "name": "Tahini (purée de sésame)", "portion": "1 C.à.S (15 g)", "pts": 3 },
     { "cat": "Fond de cuisine", "name": "Graines de sésame", "portion": "1 C.à.C (5 g)", "pts": 1 },
@@ -1104,9 +1158,12 @@
   // (ex : McNuggets x4 / x6 / x9), la portion est ajoutée au libellé pour pouvoir
   // sélectionner chaque variante dans la liste.
   function buildFoodIndex() {
+    const sameFood = f => `${String(f.name).toLowerCase()}|${String(f.portion).toLowerCase()}`;
+    const customFoods = getCustomFoods();
+    const customKeys = new Set(customFoods.map(sameFood));
     const list = [
-      ...FOOD_DATABASE.map(f => ({ ...f, custom: false })),
-      ...getCustomFoods().map(f => ({ ...f, custom: true }))
+      ...FOOD_DATABASE.filter(f => !customKeys.has(sameFood(f))).map(f => ({ ...f, custom: false })),
+      ...customFoods.map(f => ({ ...f, custom: true }))
     ];
     const counts = {};
     list.forEach(f => {
@@ -1120,15 +1177,18 @@
   }
 
   function populateCategoryDropdown() {
-    const catSelect = document.getElementById('calc-cat');
-    if (!catSelect) return;
-
-    const previous = catSelect.value;
     const categories = Array.from(new Set(FOOD_DATABASE.map(f => f.cat))).sort((a, b) => a.localeCompare(b, 'fr'));
-    catSelect.innerHTML =
+    const optionsHtml =
       '<option value="Mes Créations">⭐ Mes Créations</option>' +
       categories.map(cat => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('');
-    if (previous) catSelect.value = previous;
+
+    ['calc-cat', 'direct-cat'].forEach(id => {
+      const catSelect = document.getElementById(id);
+      if (!catSelect) return;
+      const previous = catSelect.value;
+      catSelect.innerHTML = optionsHtml;
+      if (previous) catSelect.value = previous;
+    });
   }
 
   function initDatalists() {
@@ -1197,6 +1257,40 @@
     return pts;
   }
 
+  // Un aliment perso est identifié par son nom ET sa portion (même nom avec une autre portion = autre entrée)
+  function sameCustomFood(f, name, portion) {
+    return String(f.name).trim().toLowerCase() === String(name).trim().toLowerCase() &&
+           String(f.portion).trim().toLowerCase() === String(portion).trim().toLowerCase();
+  }
+
+  // Ajout direct : nom + catégorie + portion + points (sans passer par les valeurs nutritionnelles)
+  function saveDirectFood() {
+    const name = document.getElementById('direct-name').value.trim();
+    const cat = document.getElementById('direct-cat').value || "Mes Créations";
+    const portion = document.getElementById('direct-portion').value.trim();
+    const ptsRaw = document.getElementById('direct-pts').value.trim().replace(',', '.');
+    const pts = parseFloat(ptsRaw);
+
+    if (!name) return alert("Indique le nom de l'aliment.");
+    if (!portion) return alert("Indique la portion (ex : 1 part, 125 g, 1 pot).");
+    if (ptsRaw === '' || isNaN(pts) || pts < 0) return alert("Indique un nombre de points valide (0 ou plus, ex : 7 ou 1,5).");
+
+    const foodObj = { cat, name, portion, pts: round1(pts) };
+    const customFoods = getCustomFoods();
+    const existingIndex = customFoods.findIndex(f => sameCustomFood(f, name, portion));
+    const updated = existingIndex !== -1;
+    if (updated) customFoods[existingIndex] = foodObj;
+    else customFoods.push(foodObj);
+
+    localStorage.setItem('ww_custom_foods', JSON.stringify(customFoods));
+    initDatalists();
+
+    document.getElementById('direct-name').value = '';
+    document.getElementById('direct-portion').value = '';
+    document.getElementById('direct-pts').value = '';
+    alert(`"${name}" — ${portion} (${foodObj.pts} SP) a été ${updated ? 'mis à jour' : 'enregistré'} dans "${cat}" !`);
+  }
+
   function saveCustomFoodToDb() {
     const name = document.getElementById('calc-name').value.trim();
     const selectedCat = document.getElementById('calc-cat').value || "Mes Créations";
@@ -1204,7 +1298,7 @@
 
     const pts = calculateWWPoints();
     const customFoods = getCustomFoods();
-    const existingIndex = customFoods.findIndex(f => String(f.name).toLowerCase() === name.toLowerCase());
+    const existingIndex = customFoods.findIndex(f => sameCustomFood(f, name, "100g"));
     const foodObj = { cat: selectedCat, name: name, portion: "100g", pts: pts };
 
     if (existingIndex !== -1) customFoods[existingIndex] = foodObj;
@@ -1226,8 +1320,9 @@
       newItems.forEach(item => {
         if (item && item.name && item.pts !== undefined) {
           const name = String(item.name).trim();
-          const existingIndex = customFoods.findIndex(f => String(f.name).toLowerCase() === name.toLowerCase());
-          const foodObj = { cat: item.cat || "Importé", name, portion: item.portion || "100g", pts: parseFloat(item.pts) || 0 };
+          const portion = item.portion || "100g";
+          const existingIndex = customFoods.findIndex(f => sameCustomFood(f, name, portion));
+          const foodObj = { cat: item.cat || "Importé", name, portion, pts: parseFloat(item.pts) || 0 };
           if (existingIndex !== -1) customFoods[existingIndex] = foodObj;
           else customFoods.push(foodObj);
           added++;
@@ -1419,7 +1514,10 @@
     document.getElementById('rollover-info').innerText = rollInfo;
 
     document.getElementById('disp-daily-left').innerText = round1(dailyLeft);
-    document.getElementById('disp-weekly-left').innerText = Math.max(0, round1(weeklyLeft));
+    // La réserve peut être négative : on l'affiche telle quelle (en rouge) pour motiver à « récupérer » des points avec le sport
+    const weeklyEl = document.getElementById('disp-weekly-left');
+    weeklyEl.innerText = round1(weeklyLeft);
+    weeklyEl.style.color = weeklyLeft < 0 ? '#e74c3c' : '';
     document.getElementById('disp-sport-pts').innerText = round1(daySport);
 
     const logList = document.getElementById('today-log-list');
@@ -1758,3 +1856,4 @@
 </script>
 </body>
 </html>
+
