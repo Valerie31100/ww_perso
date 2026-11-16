@@ -223,6 +223,35 @@
       margin: 6px 0 0 0;
       min-height: 1em;
     }
+
+    /* Suggestions (remplace <datalist>, mal géré par les webviews mobiles) */
+    .ac-wrap { position: relative; }
+    .ac-list {
+      display: none;
+      position: absolute;
+      left: 0; right: 0; top: 100%;
+      margin-top: -2px;
+      max-height: 45vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: #fff;
+      border: 1px solid #ccd3dc;
+      border-radius: 8px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+      z-index: 500;
+    }
+    .ac-list.open { display: block; }
+    .ac-item {
+      padding: 10px 12px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      line-height: 1.3;
+    }
+    .ac-item:last-child { border-bottom: none; }
+    .ac-item:active, .ac-item.hl { background: #eaf2fb; }
+    .ac-name { font-size: 0.95rem; color: var(--text); }
+    .ac-sub { font-size: 0.78rem; color: #7f8c8d; }
+    .ac-empty { padding: 10px 12px; font-size: 0.85rem; color: #7f8c8d; }
   </style>
 </head>
 <body>
@@ -259,8 +288,10 @@
     <!-- Saisie Aliment -->
     <div class="card">
       <h3>🍎 Rechercher ou ajouter un aliment</h3>
-      <input type="text" id="food-search" list="food-db" placeholder="Taper le nom de l'aliment..." onchange="onFoodSelect()">
-      <datalist id="food-db"></datalist>
+      <div class="ac-wrap">
+        <input type="text" id="food-search" placeholder="Taper le nom de l'aliment..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+        <div id="food-suggest" class="ac-list" role="listbox"></div>
+      </div>
       <div id="food-portion-info" class="sub-text"></div>
 
       <div style="display:flex; gap:8px;">
@@ -322,8 +353,10 @@
     <!-- Saisie Activité -->
     <div class="card">
       <h3>🏃 Rechercher ou ajouter une activité</h3>
-      <input type="text" id="sport-search" list="sport-db" placeholder="Taper l'activité..." onchange="onSportSelect()">
-      <datalist id="sport-db"></datalist>
+      <div class="ac-wrap">
+        <input type="text" id="sport-search" placeholder="Taper l'activité..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+        <div id="sport-suggest" class="ac-list" role="listbox"></div>
+      </div>
       <input type="number" id="sport-duration" placeholder="Durée en minutes (ex: 30)">
       <button onclick="addEntry('sport')" style="background:var(--accent);">Ajouter l'activité</button>
     </div>
@@ -641,7 +674,7 @@
 { "cat": "Fond de cuisine", "name": "Graisse de canard / d'oie", "portion": "1 C.à.C (5 g)", "pts": 2 },
 { "cat": "Fond de cuisine", "name": "Graisse de canard / d'oie", "portion": "1 C.à.S (15 g)", "pts": 5 },
 { "cat": "Fond de cuisine", "name": "Harissa", "portion": "1 C.à.C (5 g)", "pts": 0 },
-{ "cat": "Fond de cuisine", "name": "Herbes aromatiques (persil, basilic, thym, ciboulette...)", "portion": "à volonté", "pts": 0 }
+{ "cat": "Fond de cuisine", "name": "Herbes aromatiques (persil, basilic, thym, ciboulette...)", "portion": "à volonté", "pts": 0 },
 { "cat": "Fond de cuisine", "name": "Huile d'arachide", "portion": "1 C.à.C (5 ml)", "pts": 1 },
 { "cat": "Fond de cuisine", "name": "Huile d'arachide", "portion": "1 C.à.S (15 ml)", "pts": 4 },
 { "cat": "Fond de cuisine", "name": "Huile d'olive", "portion": "1 C.à.C (5 ml)", "pts": 1 },
@@ -981,7 +1014,7 @@
 { "cat": "oeufs & Produits Laitiers", "name": "Yaourt nature classique au lait entier", "portion": "1 pot (125 g)", "pts": 2 },
 { "cat": "Pâtisseries & Sucreries", "name": "Brioche industrielle", "portion": "1 tranche (25 g)", "pts": 3 },
 { "cat": "Pâtisseries & Sucreries", "name": "Chocolat noir / lait", "portion": "1 petit carré (10 g)", "pts": 3 },
-{ "cat": "Pâtisseries & Sucreries", "name": "Chocolatine / Pain au chocolat", "portion": "1 pièce (60 g)", "pts": 8 }
+{ "cat": "Pâtisseries & Sucreries", "name": "Chocolatine / Pain au chocolat", "portion": "1 pièce (60 g)", "pts": 8 },
 { "cat": "Pâtisseries & Sucreries", "name": "Chocolatine", "portion": "1 pièce (60 g)", "pts": 8 },
 { "cat": "Pâtisseries & Sucreries", "name": "Croissant de boulangerie", "portion": "1 pièce (50 g)", "pts": 6 },
 { "cat": "Pâtisseries & Sucreries", "name": "Éclair au chocolat", "portion": "1 pièce (100 g)", "pts": 9 },
@@ -1094,7 +1127,7 @@
 { "cat": "Volailles & Viandes", "name": "Saucisse de Toulouse", "portion": "1 morceau (70 g)", "pts": 7 },
 { "cat": "Volailles & Viandes", "name": "Steak haché 15% MG", "portion": "1 pièce (125 g)", "pts": 7 },
 { "cat": "Volailles & Viandes", "name": "Steak haché 5% MG", "portion": "1 pièce (125 g)", "pts": 3 },
-{ "cat": "Volailles & Viandes", "name": "Travers de porc / Ribs", "portion": "1 portion (150 g)", "pts": 10 }
+{ "cat": "Volailles & Viandes", "name": "Travers de porc / Ribs", "portion": "1 portion (150 g)", "pts": 10 },
 { "cat": "Volailles & Viandes", "name": "Travers de porc / Ribs", "portion": "1 portion (150 g)", "pts": 10 },
      ];
 
@@ -1203,22 +1236,89 @@
   }
 
   function initDatalists() {
-    const foodList = document.getElementById('food-db');
-    const sportList = document.getElementById('sport-db');
-
-    if (foodList) {
-      foodList.innerHTML = buildFoodIndex().map(item =>
-        `<option value="${escapeHtml(item.label)}">${item.custom ? '⭐ ' : ''}${escapeHtml(item.cat)} - ${escapeHtml(item.portion)} (${escapeHtml(item.pts)} SP)</option>`
-      ).join('');
-    }
-
-    if (sportList) {
-      sportList.innerHTML = SPORT_DATABASE.map(item =>
-        `<option value="${escapeHtml(item.name)}">${escapeHtml(item.intensity)} - ${item.refDur} min (${item.pts} Pts)</option>`
-      ).join('');
-    }
-
+    // Les anciennes <datalist> sont remplacées par des suggestions personnalisées
+    // (calculées à la frappe à partir de buildFoodIndex() et SPORT_DATABASE).
     populateCategoryDropdown();
+  }
+
+  function normalizeText(str) {
+    return String(str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  // Recherche tolérante : accents ignorés, tous les mots tapés doivent apparaître
+  function matchesQuery(haystack, query) {
+    const words = normalizeText(query).split(/\s+/).filter(Boolean);
+    const h = normalizeText(haystack);
+    return words.every(w => h.includes(w));
+  }
+
+  function setupAutocomplete(inputId, listId, getItems, onPick) {
+    const input = document.getElementById(inputId);
+    const list = document.getElementById(listId);
+    if (!input || !list) return;
+    let shown = [];
+
+    function close() { list.classList.remove('open'); list.innerHTML = ''; shown = []; }
+
+    function render() {
+      const q = input.value.trim();
+      if (!q) { close(); return; }
+      shown = getItems().filter(it => matchesQuery(it.search, q)).slice(0, 60);
+      if (!shown.length) {
+        list.innerHTML = '<div class="ac-empty">Aucun résultat : tu peux l\'ajouter à ta base plus bas.</div>';
+        list.classList.add('open');
+        return;
+      }
+      list.innerHTML = shown.map((it, i) =>
+        `<div class="ac-item" role="option" data-i="${i}"><div class="ac-name">${escapeHtml(it.title)}</div><div class="ac-sub">${escapeHtml(it.sub)}</div></div>`
+      ).join('');
+      list.classList.add('open');
+    }
+
+    function pick(i) {
+      const it = shown[i];
+      if (!it) return;
+      input.value = it.value;
+      close();
+      onPick(it);
+    }
+
+    input.addEventListener('input', render);
+    input.addEventListener('focus', render);
+    // pointerdown + preventDefault : on choisit avant que le champ perde le focus (iOS / mobile)
+    list.addEventListener('pointerdown', e => {
+      const el = e.target.closest('.ac-item');
+      if (!el) return;
+      e.preventDefault();
+      pick(Number(el.dataset.i));
+    });
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && shown.length) { e.preventDefault(); pick(0); }
+      if (e.key === 'Escape') close();
+    });
+    document.addEventListener('pointerdown', e => {
+      if (!e.target.closest('.ac-wrap')) close();
+    });
+  }
+
+  function getFoodSuggestItems() {
+    return buildFoodIndex().map(f => ({
+      value: f.label,
+      title: (f.custom ? '⭐ ' : '') + f.label,
+      sub: `${f.cat} · ${f.portion} · ${f.pts} SP`,
+      search: `${f.name} ${f.label} ${f.cat}`,
+      ref: f
+    }));
+  }
+
+  function getSportSuggestItems() {
+    return SPORT_DATABASE.map(s => ({
+      value: s.name,
+      title: s.name,
+      sub: `${s.intensity} · ${s.refDur} min (${s.pts} Pts)`,
+      search: s.name,
+      ref: s
+    }));
   }
 
   function onFoodSelect() {
@@ -1863,8 +1963,15 @@
   document.addEventListener('visibilitychange', () => { if (!document.hidden) updateUI(); });
 
   initDatalists();
+  setupAutocomplete('food-search', 'food-suggest', getFoodSuggestItems, () => onFoodSelect());
+  setupAutocomplete('sport-search', 'sport-suggest', getSportSuggestItems, () => onSportSelect());
+  // Si l'utilisateur tape le nom exact sans cliquer une suggestion
+  document.getElementById('food-search').addEventListener('change', onFoodSelect);
+  document.getElementById('sport-search').addEventListener('change', onSportSelect);
   updateUI();
 </script>
 </body>
 </html>
+
+
 
